@@ -43,7 +43,7 @@
 
 - (void)addPlugin:(MatrixPlugin *)plugin {
     if (nil == plugin) {
-        MatrixError(@"plugin is nil");
+        MatrixError(@"插件为空");
         return;
     }
 
@@ -122,13 +122,13 @@
         }
     }
     if (retPlugin == nil) {
-        MatrixError(@"Plugin[%@] does not be inited.", tag);
+        MatrixError(@"插件[%@]未被初始化", tag);
     }
     return retPlugin;
 }
 
 - (void)reportIssueComplete:(MatrixIssue *)matrixIssue success:(BOOL)bSuccess {
-    MatrixInfo(@"report issue complete: %@, success: %d", matrixIssue, bSuccess);
+    MatrixInfo(@"问题上报完成: %@, 成功: %d", matrixIssue, bSuccess);
     MatrixPlugin *plugin = [self getPluginWithTag:matrixIssue.issueTag];
     [plugin reportIssueCompleteWithIssue:matrixIssue success:bSuccess];
 }

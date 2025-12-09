@@ -130,14 +130,14 @@
 
 - (void)testForegroundMainthreadLog
 {
-    NSLog(@"Test Foreground Main Thread Log");
-    NSLog(@"wait.. 5s");
+    NSLog(@"测试前台主线程日志");
+    NSLog(@"等待中.. 5秒");
     [self.maTester generateMainThreadLagLog];
 }
 
 - (void)testBlockAndBeKilled
 {
-    NSLog(@"Test Block And Be killed");
+    NSLog(@"测试主线程阻塞并被杀死");
     [self.maTester generateMainThreadBlockToBeKilledLog];
 }
 

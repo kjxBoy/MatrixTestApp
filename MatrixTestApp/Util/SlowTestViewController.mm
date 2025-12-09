@@ -83,12 +83,12 @@
 
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
 {
-    NSLog(@"now is in kCFRunLoopDefaultMode");
+    NSLog(@"当前处于 kCFRunLoopDefaultMode");
 }
 
 - (void)scrollViewWillEndDragging:(UIScrollView *)scrollView withVelocity:(CGPoint)velocity targetContentOffset:(inout CGPoint *)targetContentOffset
 {
-    NSLog(@"now is in UITrackingRunLoopMode");
+    NSLog(@"当前处于 UITrackingRunLoopMode");
 //    sleep(5);
 }
 @end

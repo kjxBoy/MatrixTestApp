@@ -62,7 +62,7 @@ void kscrash_innerHandleSignalCallback(siginfo_t *info) {
         [KSCrash setCustomFullVersion:_appVersion shortVersion:_appShortVersion];
     }
 
-    MatrixInfo(@"install kscrash, version : %@ , %@", _appVersion, _appShortVersion);
+    MatrixInfo(@"安装 kscrash，版本: %@ , %@", _appVersion, _appShortVersion);
 
     if (_onHandleSignalCallBack != nil) {
         handler.onHandleSignalCallBack = _onHandleSignalCallBack;
@@ -82,15 +82,15 @@ void kscrash_innerHandleSignalCallback(siginfo_t *info) {
 
     BOOL ret = [handler install];
     if (!ret) {
-        MatrixError(@"KSCrash Object install failed");
+        MatrixError(@"KSCrash 对象安装失败");
     } else {
-        MatrixInfo(@"KSCrash install success");
+        MatrixInfo(@"KSCrash 安装成功");
         _bInstallSuccess = ret;
     }
 
     NSString *lagFilePath = [MatrixAppRebootAnalyzer lastDumpFileName];
     if (lagFilePath && lagFilePath.length > 0) {
-        MatrixInfo(@"should handle oom dump file, %@", lagFilePath);
+        MatrixInfo(@"需要处理 OOM 转储文件，%@", lagFilePath);
         [WCCrashBlockFileHandler handleOOMDumpFile:lagFilePath];
     }
     return ret;
@@ -98,9 +98,9 @@ void kscrash_innerHandleSignalCallback(siginfo_t *info) {
 
 - (void)enableBlockMonitor {
     if (_bInstallSuccess == NO) {
-        MatrixError(@"KSCrash not install success, cannot use block monitor");
+        MatrixError(@"KSCrash 未成功安装，无法使用卡顿监控");
     }
-    MatrixInfo(@"install block monitor");
+    MatrixInfo(@"安装卡顿监控");
 
     _blockMonitor = [WCBlockMonitorMgr shareInstance];
     _blockMonitor.delegate = self;
@@ -125,7 +125,7 @@ void kscrash_innerHandleSignalCallback(siginfo_t *info) {
 - (void)resetAppFullVersion:(NSString *)fullVersion shortVersion:(NSString *)shortVersion {
     _appVersion = fullVersion;
     _appShortVersion = shortVersion;
-    MatrixInfo(@"reset version : %@ , %@", fullVersion, shortVersion);
+    MatrixInfo(@"重置版本: %@ , %@", fullVersion, shortVersion);
 
     if (_appVersion != nil && _appShortVersion != nil && [_appVersion length] > 0 && [_appShortVersion length] > 0) {
         [KSCrash setCustomFullVersion:fullVersion shortVersion:shortVersion];
@@ -135,24 +135,24 @@ void kscrash_innerHandleSignalCallback(siginfo_t *info) {
 #if !TARGET_OS_OSX
 
 - (void)handleBackgroundLaunch {
-    MatrixDebug(@"handle background launch");
+    MatrixDebug(@"处理后台启动");
     [_blockMonitor handleBackgroundLaunch];
 }
 
 - (void)handleSuspend {
-    MatrixDebug(@"handle suspend");
+    MatrixDebug(@"处理挂起");
     [_blockMonitor handleSuspend];
 }
 
 #endif
 
 - (void)startTrackCPU {
-    MatrixDebug(@"start track CPU");
+    MatrixDebug(@"开始跟踪 CPU");
     [_blockMonitor startTrackCPU];
 }
 
 - (void)stopTrackCPU {
-    MatrixDebug(@"stop track CPU");
+    MatrixDebug(@"停止跟踪 CPU");
     [_blockMonitor stopTrackCPU];
 }
 

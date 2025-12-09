@@ -38,13 +38,13 @@
     NSData *jsonData = [WCCrashBlockJsonUtil jsonEncode:reportDic withError:nil];
 
     if (jsonData.length == 0 || jsonData == nil) {
-        MatrixWarning(@"load pending crash report, json data is nil");
+        MatrixWarning(@"加载待处理崩溃报告，JSON 数据为空");
         [WCCrashBlockFileHandler deleteCrashDataWithReportID:newestID];
         return nil;
     }
 
     NSDictionary *reportInfoData = @{ @"reportID" : newestID, @"crashData" : jsonData };
-    MatrixInfo(@"load pending crash report data %@", newestID);
+    MatrixInfo(@"加载待处理崩溃报告数据 %@", newestID);
     return reportInfoData;
 }
 
@@ -101,7 +101,7 @@
 }
 
 + (void)deleteCrashDataWithReportID:(NSString *)reportID {
-    MatrixInfo(@"delete crash report data with reportID : %@", reportID);
+    MatrixInfo(@"删除崩溃报告数据，报告 ID: %@", reportID);
     KSCrash *handler = [KSCrash sharedInstance];
     [handler deleteReportWithID:reportID];
 }
@@ -178,19 +178,19 @@ static NSString *g_userDumpCachePath = nil;
             NSString *path = [[KSCrash sharedInstance] pathToCrashReportWithID:reportID withStorePath:storePath];
             NSData *jsonData = [NSData dataWithContentsOfFile:path];
             if (jsonData == nil) {
-                MatrixError(@"get file %@ fail", path);
+                MatrixError(@"获取文件失败 %@", path);
                 [WCCrashBlockFileHandler deleteLagDataWithReportID:reportID andReportType:dumpType];
                 continue;
             }
             if ([jsonData length] > 4 * 1000 * 1000) {
-                MatrixError(@"file is too big %@ fail", path);
+                MatrixError(@"文件过大 %@", path);
                 [WCCrashBlockFileHandler deleteLagDataWithReportID:reportID andReportType:dumpType];
                 continue;
             }
 
             NSMutableDictionary *report = [WCCrashBlockJsonUtil jsonDecode:jsonData withError:&error];
             if (error != nil) {
-                MatrixError(@"get file JSON data from %@: %@", path, error);
+                MatrixError(@"从 %@ 获取 JSON 数据失败: %@", path, error);
                 [WCCrashBlockFileHandler deleteLagDataWithReportID:reportID andReportType:dumpType];
                 continue;
             }
@@ -208,7 +208,7 @@ static NSString *g_userDumpCachePath = nil;
     NSData *jsonData = [NSData dataWithContentsOfFile:path];
 
     if (jsonData == nil) {
-        MatrixError(@"get file %@ fail", path);
+        MatrixError(@"获取文件失败 %@", path);
         [WCCrashBlockFileHandler deleteLagDataWithReportID:reportID andReportType:dumpType];
         return nil;
     }
@@ -300,7 +300,7 @@ static NSString *g_userDumpCachePath = nil;
 
     NSArray *stringComponentArray = [lagFilePath componentsSeparatedByString:@"/"];
     if ([stringComponentArray count] <= 2) {
-        MatrixWarning(@"%@ path is illegal", lagFilePath);
+        MatrixWarning(@"%@ 路径不合法", lagFilePath);
         return;
     }
 
@@ -312,18 +312,18 @@ static NSString *g_userDumpCachePath = nil;
     NSFileManager *fileMgr = [NSFileManager defaultManager];
     BOOL bExist = [fileMgr fileExistsAtPath:trueLagFilePath];
     if (bExist == NO) {
-        MatrixWarning(@"%@ is not exist", trueLagFilePath);
+        MatrixWarning(@"%@ 不存在", trueLagFilePath);
         return;
     }
 
-    MatrixInfo(@"last oom dump file path: %@", trueLagFilePath);
+    MatrixInfo(@"上次 OOM 转储文件路径: %@", trueLagFilePath);
 
     NSData *jsonData = [NSData dataWithContentsOfFile:trueLagFilePath];
     NSError *error = nil;
     NSMutableDictionary *report = [WCCrashBlockJsonUtil jsonDecode:jsonData withError:&error];
 
     if (error != nil) {
-        MatrixWarning(@"Error decoding JSON data from %@: %@", trueLagFilePath, error);
+        MatrixWarning(@"从 %@ 解码 JSON 数据失败: %@", trueLagFilePath, error);
         return;
     }
 
@@ -340,9 +340,9 @@ static NSString *g_userDumpCachePath = nil;
 
     if ([jsonData writeToFile:newLagFilePath atomically:YES]) {
         [fileMgr removeItemAtPath:trueLagFilePath error:nil];
-        MatrixInfo(@"Get a oom dump file");
+        MatrixInfo(@"获取到一个 OOM 转储文件");
     } else {
-        MatrixError(@"save json data to %@ fail", newLagFilePath);
+        MatrixError(@"保存 JSON 数据到 %@ 失败", newLagFilePath);
     }
 }
 

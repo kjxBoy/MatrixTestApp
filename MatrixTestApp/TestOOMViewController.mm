@@ -113,7 +113,7 @@
 
 - (void)testOOM
 {
-    NSLog(@"Make OOM");
+    NSLog(@"制造内存溢出");
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSMutableArray *array = [NSMutableArray array];

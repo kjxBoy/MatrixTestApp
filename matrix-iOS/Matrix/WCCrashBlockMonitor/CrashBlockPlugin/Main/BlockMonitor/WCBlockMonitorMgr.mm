@@ -460,12 +460,12 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 }
 
 - (void)didBecomeActive {
-    MatrixInfo(@"did become active");
+    MatrixInfo(@"已变为活跃状态");
 
     m_currentState = [UIApplication sharedApplication].applicationState;
 
     if (g_bBackgroundLaunch && !g_bLaunchOver) {
-        MatrixInfo(@"backgroundLaunch before launchOver, clean dump");
+        MatrixInfo(@"启动完成前后台启动，清除转储");
         [self clearDumpInBackgroundLaunch];
         g_bBackgroundLaunch = NO;
     }
@@ -476,18 +476,18 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 }
 
 - (void)didEnterBackground {
-    MatrixInfo(@"did enter background");
+    MatrixInfo(@"已进入后台");
     m_currentState = [UIApplication sharedApplication].applicationState;
 }
 
 - (void)willResignActive {
-    MatrixInfo(@"will resign active");
+    MatrixInfo(@"即将失去活跃状态");
     m_currentState = [UIApplication sharedApplication].applicationState;
     g_bLaunchOver = YES;
 }
 
 - (void)thermalStateDidChange {
-    MatrixDebug(@"thermal state did change");
+    MatrixDebug(@"热状态已改变");
 
     if (@available(iOS 11.0, *)) {
         // On iOS 15.0.2, Foundation.framework might post ThermalStateDidChangeNotification from -[NSProcessInfo thermalState],
@@ -514,17 +514,17 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 - (void)setCPUUsagePercent:(float)usagePercent {
     float tmpUsagePercent = g_CPUUsagePercent;
     g_CPUUsagePercent = usagePercent;
-    MatrixInfo(@"set cpuusage before[%lf] after[%lf]", tmpUsagePercent, g_CPUUsagePercent);
+    MatrixInfo(@"设置 CPU 使用率 之前[%lf] 之后[%lf]", tmpUsagePercent, g_CPUUsagePercent);
 }
 
 - (void)setPerStackInterval:(useconds_t)perStackInterval {
     if (perStackInterval < BM_MicroFormat_FrameMillSecond || perStackInterval > BM_MicroFormat_Second) {
-        MatrixWarning(@"perstackInterval invalid, current[%u] setTo[%u]", g_PerStackInterval, perStackInterval);
+        MatrixWarning(@"每次堆栈间隔无效，当前[%u] 设为[%u]", g_PerStackInterval, perStackInterval);
         return;
     }
     useconds_t tmpStackInterval = g_PerStackInterval;
     g_PerStackInterval = perStackInterval;
-    MatrixInfo(@"set per stack interval before[%u] after[%u]", tmpStackInterval, g_PerStackInterval);
+    MatrixInfo(@"设置每次堆栈间隔 之前[%u] 之后[%u]", tmpStackInterval, g_PerStackInterval);
 }
 
 // ============================================================================
@@ -685,7 +685,7 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
         if (diff > DETECTION_THREAD_JUDGE_SUSPEND_THRESHOLD) {
             //running after suspend
             gettimeofday(&g_tvRun, NULL);
-            MatrixInfo(@"running after suspend, diff %llu", diff);
+            MatrixInfo(@"挂起后运行，差值 %llu", diff);
             return;
         }
     }
@@ -710,7 +710,7 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 #if !TARGET_OS_OSX
     struct timeval tmp_g_tvSuspend = g_tvSuspend;
     if (__timercmp(&tmp_g_tvSuspend, &tmp_g_tvRun, >)) {
-        MatrixInfo(@"suspend after run, filter");
+        MatrixInfo(@"运行后挂起，已过滤");
         return EDumpType_Unlag;
     }
 #endif
@@ -720,11 +720,11 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
     if (tmp_g_bRun && tmp_g_tvRun.tv_sec && tmp_g_tvRun.tv_usec && __timercmp(&tmp_g_tvRun, &tvCur, <) && diff > g_RunLoopTimeOut) {
         m_blockDiffTime = diff;
 #if TARGET_OS_OSX
-        MatrixInfo(@"check run loop time out threshold %u, bRun %d, runloopActivity %lu, block diff time %llu", g_RunLoopTimeOut, g_bRun, g_runLoopActivity, diff);
+        MatrixInfo(@"检查 RunLoop 超时阈值 %u，bRun %d，runloop 活动 %lu，阻塞时间差 %llu", g_RunLoopTimeOut, g_bRun, g_runLoopActivity, diff);
 #endif
 
 #if !TARGET_OS_OSX
-        MatrixInfo(@"check run loop time out threshold %u, application state %ld, bRun %d, runloopActivity %lu, block diff time %llu",
+        MatrixInfo(@"检查 RunLoop 超时阈值 %u，应用状态 %ld，bRun %d，runloop 活动 %lu，阻塞时间差 %llu",
                    g_RunLoopTimeOut,
                    (long)m_currentState,
                    g_bRun,
@@ -732,7 +732,7 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
                    diff);
 
         if (g_bBackgroundLaunch && !g_bLaunchOver) {
-            MatrixInfo(@"backgroundLaunch before launchOver, filter");
+            MatrixInfo(@"启动完成前后台启动，已过滤");
             return EDumpType_Unlag;
         }
 
@@ -746,7 +746,7 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 #if TARGET_OS_OSX
     if (tmp_g_bEventStart && tmp_g_tvEvent.tv_sec && tmp_g_tvEvent.tv_usec && __timercmp(&tmp_g_tvEvent, &tvCur, <) && eventDiff > g_RunLoopTimeOut) {
         m_blockDiffTime = eventDiff;
-        MatrixInfo(@"check event time out %u bRun %d", g_RunLoopTimeOut, g_eventStart);
+        MatrixInfo(@"检查事件超时 %u bRun %d", g_RunLoopTimeOut, g_eventStart);
         return EDumpType_MainThreadBlock;
     }
 #endif
@@ -763,7 +763,7 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
     float deviceCpuUsage = [MatrixDeviceInfo cpuUsage];
 
     if ([_monitorConfigHandler getShouldPrintCPUUsage] && (appCpuUsage > 40.0f || deviceCpuUsage > 40.0f)) {
-        MatrixInfo(@"AppCpuUsage: %.2f, Device: %.2f", appCpuUsage, deviceCpuUsage * [MatrixDeviceInfo cpuCount]);
+        MatrixInfo(@"应用 CPU 使用率: %.2f，设备: %.2f", appCpuUsage, deviceCpuUsage * [MatrixDeviceInfo cpuCount]);
     }
 
     // 耗电堆栈检测 & CPU 消耗过高检测
@@ -773,14 +773,14 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
         unsigned long long checkPeriod = [WCBlockMonitorMgr diffTime:&g_lastCheckTime endTime:&tvCur];
         gettimeofday(&g_lastCheckTime, NULL);
         if ([m_cpuHandler cultivateCpuUsage:appCpuUsage periodTime:(float)checkPeriod / 1000000]) {
-            MatrixInfo(@"exceed cpu average usage");
+            MatrixInfo(@"超出 CPU 平均使用率");
             if (m_powerConsumeStackCollector) {
                 [m_powerConsumeStackCollector makeConclusion];
             }
             BM_SAFE_CALL_SELECTOR_NO_RETURN(_delegate, @selector(onBlockMonitorIntervalCPUTooHigh:), onBlockMonitorIntervalCPUTooHigh:self)
         }
         if (appCpuUsage > g_CPUUsagePercent) {
-            MatrixInfo(@"check cpu over usage dump %f", appCpuUsage);
+            MatrixInfo(@"检查 CPU 过度使用转储 %f", appCpuUsage);
             BM_SAFE_CALL_SELECTOR_NO_RETURN(_delegate, @selector(onBlockMonitorCurrentCPUTooHigh:), onBlockMonitorCurrentCPUTooHigh:self)
             if ([_monitorConfigHandler getShouldGetCPUHighLog]) {
                 if (m_powerConsumeStackCollector && [m_powerConsumeStackCollector isCPUHighBlock]) {

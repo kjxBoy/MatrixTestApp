@@ -73,7 +73,7 @@
 
 #define CHECK_DEBUGGING                       \
     if ([MatrixDeviceInfo isBeingDebugged]) { \
-        MatrixInfo(@"app is being debugged"); \
+        MatrixInfo(@"应用正在被调试"); \
         return;                               \
     }
 
@@ -135,7 +135,7 @@ static BOOL s_isSuspendKilled = NO;
 
 + (void)checkRebootType {
     if ([MatrixDeviceInfo isBeingDebugged]) {
-        MatrixInfo(@"app is being debugged");
+        MatrixInfo(@"应用正在被调试");
         MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
         info.isAppCrashed = NO;
         info.isAppQuitByExit = NO;
@@ -186,7 +186,7 @@ static BOOL s_isSuspendKilled = NO;
         s_rebootType = MatrixAppRebootTypeOtherReason;
     }
 
-    MatrixInfo(@"checkRebootType reboot type : %lu , last dump file name : %@", (unsigned long)s_rebootType, s_lastDumpFileName);
+    MatrixInfo(@"检查重启类型: %lu , 上次转储文件名: %@", (unsigned long)s_rebootType, s_lastDumpFileName);
 
     s_lastUserScene = info.userScene;
     s_lastAppLaunchTime = info.appLaunchTime;
@@ -243,7 +243,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppQuitByExit {
     CHECK_DEBUGGING;
 
-    MatrixDebug(@"app quit by exit");
+    MatrixDebug(@"应用通过 exit 退出");
     MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
     info.isAppQuitByExit = YES;
     [info saveInfo];
@@ -252,7 +252,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppQuitByUser {
     CHECK_DEBUGGING;
 
-    MatrixDebug(@"app quit by user");
+    MatrixDebug(@"应用被用户退出");
     MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
     info.isAppQuitByUser = YES;
     [info saveInfo];
@@ -261,7 +261,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppCrashed {
     CHECK_DEBUGGING;
 
-    MatrixDebug(@"app is crashed");
+    MatrixDebug(@"应用已崩溃");
     MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
     info.isAppCrashed = YES;
     [info saveInfo];
@@ -272,7 +272,7 @@ void g_matrix_app_exit() {
 
     // delay one second
     s_foregroundDelayBlock = dispatch_block_create(DISPATCH_BLOCK_NO_QOS_CLASS, ^{
-        MatrixDebug(@"enter foreground or become active");
+        MatrixDebug(@"进入前台或变为活跃状态");
 
         MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
         info.isAppEnterForeground = YES;
@@ -288,7 +288,7 @@ void g_matrix_app_exit() {
             // 取消标记位
             s_isSuspendKilled = NO;
             info.isAppSuspendKilled = NO;
-            MatrixDebug(@"clear isSuspendKilled flag");
+            MatrixDebug(@"清除 isSuspendKilled 标志");
         }
 
         [info saveInfo];
@@ -299,7 +299,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppEnterBackground {
     CHECK_DEBUGGING
 
-    MatrixDebug(@"enter background");
+    MatrixDebug(@"进入后台");
 
     // s_foregroundDelayBlock canceled, to avoid misjudgment
     if (s_foregroundDelayBlock) {
@@ -317,7 +317,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppBackgroundFetch {
     CHECK_DEBUGGING
 
-    MatrixDebug(@"background fetch");
+    MatrixDebug(@"后台获取");
 
     MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
     info.isAppBackgroundFetch = YES;
@@ -327,7 +327,7 @@ void g_matrix_app_exit() {
 + (void)notifyAppWillSuspend {
     CHECK_DEBUGGING
 
-    MatrixDebug(@"will suspend");
+    MatrixDebug(@"即将挂起");
 
     // s_foregroundDelayBlock canceled, to avoid misjudgment
     if (s_foregroundDelayBlock) {
@@ -354,7 +354,7 @@ void g_matrix_app_exit() {
             s_isSuspendKilled = YES;
             info.isAppSuspendKilled = YES;
             [info saveInfo];
-            MatrixInfo(@"maybe killed after several seconds...");
+            MatrixInfo(@"可能在几秒后被杀死...");
         }
     });
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(18 * NSEC_PER_SEC)), dispatch_get_main_queue(), s_suspendDelayBlock);
@@ -363,7 +363,7 @@ void g_matrix_app_exit() {
 + (void)setUserScene:(NSString *)scene {
     CHECK_DEBUGGING;
 
-    MatrixDebug(@"set scene: %@", scene);
+    MatrixDebug(@"设置场景: %@", scene);
     MatrixAppRebootInfo *info = [MatrixAppRebootInfo sharedInstance];
     info.userScene = scene;
     [info saveInfo];
@@ -424,10 +424,10 @@ void g_matrix_app_exit() {
     }
 
     if (xpcLagCount > 1) {
-        MatrixInfo(@"did occur xpc lag, xpc lag number is:(%lu)", xpcLagCount);
+        MatrixInfo(@"发生了 XPC 卡顿，XPC 卡顿次数:(%lu)", xpcLagCount);
         return YES;
     }
-    MatrixInfo(@"no xpc lag");
+    MatrixInfo(@"无 XPC 卡顿");
     return NO;
 }
 
@@ -443,43 +443,43 @@ void g_matrix_app_exit() {
             NSError *error = nil;
             NSMutableDictionary *lagDataDic = [WCCrashBlockJsonUtil jsonDecode:lagData withError:&error];
             if (error != nil) {
-                MatrixInfo(@"decode data error %@", lagFile);
+                MatrixInfo(@"解码数据错误 %@", lagFile);
                 continue;
             }
             if (lagDataDic == nil) {
-                MatrixInfo(@"decode data is nil %@", lagFile);
+                MatrixInfo(@"解码数据为空 %@", lagFile);
                 continue;
             }
 
             NSMutableDictionary *crashDic = [lagDataDic objectForKey:@"crash"];
             if (crashDic == nil) {
-                MatrixInfo(@"decode data doesn't contain crash info %@", lagFile);
+                MatrixInfo(@"解码数据不包含崩溃信息 %@", lagFile);
                 continue;
             }
 
             NSMutableArray *threadsArr = [crashDic objectForKey:@"threads"];
             if (threadsArr == nil || threadsArr.count == 0) {
-                MatrixInfo(@"decode data doesn't contain threads info %@", lagFile);
+                MatrixInfo(@"解码数据不包含线程信息 %@", lagFile);
                 continue;
             }
 
             NSMutableDictionary *threadInfoDic = [threadsArr firstObject];
             NSMutableDictionary *threadContentsDic = [threadInfoDic objectForKey:@"backtrace"];
             if (threadContentsDic == nil) {
-                MatrixInfo(@"decode data doesn't contain thread info %@", lagFile);
+                MatrixInfo(@"解码数据不包含线程信息 %@", lagFile);
                 continue;
             }
 
             NSMutableArray *threadContentsArr = [threadContentsDic objectForKey:@"contents"];
             if (threadContentsArr == nil || threadContentsArr.count == 0) {
-                MatrixInfo(@"decode data doesn't contain thread info %@", lagFile);
+                MatrixInfo(@"解码数据不包含线程信息 %@", lagFile);
                 continue;
             }
 
             for (NSMutableDictionary *threadDetailDic in threadContentsArr) {
                 NSString *objectName = [threadDetailDic objectForKey:@"object_name"];
                 if (objectName != nil && [objectName isEqualToString:@"libxpc.dylib"]) {
-                    MatrixInfo(@"occur xpc lag, lag file is: %@", lagFile);
+                    MatrixInfo(@"发生 XPC 卡顿，卡顿文件: %@", lagFile);
                     xpcLagCount += 1;
                     break;
                 }
@@ -498,7 +498,7 @@ void g_matrix_app_exit() {
     NSString *lastUUID = info.appUUID;
     NSString *nowUUID = @(app_uuid());
 
-    MatrixDebug(@"app uuid now: %@, last: %@", nowUUID, lastUUID);
+    MatrixDebug(@"应用 UUID 当前: %@, 上次: %@", nowUUID, lastUUID);
     return (lastUUID != nil && ![lastUUID isEqualToString:nowUUID]);
 }
 
@@ -507,7 +507,7 @@ void g_matrix_app_exit() {
     NSString *lastOsVersion = info.osVersion;
     NSString *nowOsVersion = [MatrixDeviceInfo systemVersion];
 
-    MatrixDebug(@"osversion now: %@ last: %@", nowOsVersion, lastOsVersion);
+    MatrixDebug(@"系统版本 当前: %@ 上次: %@", nowOsVersion, lastOsVersion);
     return ![lastOsVersion isEqualToString:nowOsVersion];
 }
 
@@ -523,7 +523,7 @@ void g_matrix_app_exit() {
     uint64_t lastAppLaunchTimeStamp = info.appLaunchTime;
     uint64_t systemStartTimeStamp = [MatrixAppRebootAnalyzer getSystemLaunchTimeStamp];
 
-    MatrixDebug(@"system start: %lld app launch: %lld", systemStartTimeStamp, lastAppLaunchTimeStamp);
+    MatrixDebug(@"系统启动: %lld 应用启动: %lld", systemStartTimeStamp, lastAppLaunchTimeStamp);
     return systemStartTimeStamp > lastAppLaunchTimeStamp;
 }
 

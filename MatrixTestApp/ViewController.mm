@@ -105,7 +105,7 @@
 
 - (void)enterNextView
 {
-    NSLog(@"enter next view");
+    NSLog(@"进入下一个视图");
     SlowTestViewController *vc = [[SlowTestViewController alloc] init];
     [self presentViewController:vc animated:YES completion:nil];
 }

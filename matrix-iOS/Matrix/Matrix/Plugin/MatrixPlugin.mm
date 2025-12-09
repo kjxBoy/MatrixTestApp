@@ -57,11 +57,11 @@
 }
 
 - (void)reportIssueCompleteWithIssue:(MatrixIssue *)issue success:(BOOL)bSuccess {
-    MatrixError(@"base class not deal with this");
+    MatrixError(@"基类不处理此方法");
 }
 
 + (NSString *)getTag {
-    MatrixError(@"base class has no tag");
+    MatrixError(@"基类没有标签");
     return nil;
 }
 

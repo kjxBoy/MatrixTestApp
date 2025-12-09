@@ -105,40 +105,40 @@ void kscrash_crashCallback(const KSCrashReportWriter *writer)
 
 - (void)onReportIssue:(MatrixIssue *)issue
 {
-    NSLog(@"get issue: %@", issue);
+    NSLog(@"获取问题: %@", issue);
     
     AppDelegate *appDelegate = (AppDelegate *)[[UIApplication sharedApplication] delegate];
     TextViewController *textVC = nil;
     
-    NSString *currentTilte = @"unknown";
+    NSString *currentTilte = @"未知";
     
     if ([issue.issueTag isEqualToString:[WCCrashBlockMonitorPlugin getTag]]) {
         if (issue.reportType == EMCrashBlockReportType_Lag) {
-            NSMutableString *lagTitle = [@"Lag" mutableCopy];
+            NSMutableString *lagTitle = [@"卡顿" mutableCopy];
             if (issue.customInfo != nil) {
                 NSString *dumpTypeDes = @"";
                 NSNumber *dumpType = [issue.customInfo objectForKey:@g_crash_block_monitor_custom_dump_type];
                 switch (EDumpType(dumpType.integerValue)) {
                     case EDumpType_MainThreadBlock:
-                        dumpTypeDes = @"Foreground Main Thread Block";
+                        dumpTypeDes = @"前台主线程阻塞";
                         break;
                     case EDumpType_BackgroundMainThreadBlock:
-                        dumpTypeDes = @"Background Main Thread Block";
+                        dumpTypeDes = @"后台主线程阻塞";
                         break;
                     case EDumpType_CPUBlock:
-                        dumpTypeDes = @"CPU Too High";
+                        dumpTypeDes = @"CPU 占用过高";
                         break;
                     case EDumpType_PowerConsume:
-                        dumpTypeDes = @"Power Consume Calltree";
+                        dumpTypeDes = @"耗电调用树";
                         break;
                     case EDumpType_LaunchBlock:
-                        dumpTypeDes = @"Launching Main Thread Block";
+                        dumpTypeDes = @"启动时主线程阻塞";
                         break;
                     case EDumpType_BlockThreadTooMuch:
-                        dumpTypeDes = @"Block And Thread Too Much";
+                        dumpTypeDes = @"阻塞且线程过多";
                         break;
                     case EDumpType_BlockAndBeKilled:
-                        dumpTypeDes = @"Main Thread Block Before Be Killed";
+                        dumpTypeDes = @"被杀死前的主线程阻塞";
                         break;
                     default:
                         dumpTypeDes = [NSString stringWithFormat:@"%d", [dumpType intValue]];
@@ -149,12 +149,12 @@ void kscrash_crashCallback(const KSCrashReportWriter *writer)
             currentTilte = [lagTitle copy];
         }
         if (issue.reportType == EMCrashBlockReportType_Crash) {
-            currentTilte = @"Crash";
+            currentTilte = @"崩溃";
         }
     }
     
     if ([issue.issueTag isEqualToString:[WCMemoryStatPlugin getTag]]) {
-        currentTilte = @"OOM Info";
+        currentTilte = @"内存溢出信息";
     }
     
     if (issue.dataType == EMatrixIssueDataType_Data) {
@@ -185,7 +185,7 @@ void kscrash_crashCallback(const KSCrashReportWriter *writer)
 
 - (void)onCrashBlockMonitorDumpType:(EDumpType)dumpType filter:(EFilterType)filterType
 {
-    NSLog(@"filtered dump type:%u, filter type: %u", (uint32_t)dumpType, (uint32_t)filterType);
+    NSLog(@"已过滤的转储类型:%u, 过滤类型: %u", (uint32_t)dumpType, (uint32_t)filterType);
 }
 
 - (void)onCrashBlockMonitorDumpFilter:(EDumpType)dumpType

@@ -92,9 +92,9 @@ static NSString *g_matrixCacheRootPath = nil;
                     NSError *removeError = nil;
                     [[NSFileManager defaultManager] removeItemAtPath:filePath error:&removeError];
                     if (removeError != nil) {
-                        MatrixError(@"remove file: %@ error: %@", filePath, removeError);
+                        MatrixError(@"删除文件失败: %@ 错误: %@", filePath, removeError);
                     } else {
-                        MatrixInfo(@"remove file: %@", filePath);
+                        MatrixInfo(@"删除文件: %@", filePath);
                     }
                 }
             }
@@ -120,7 +120,7 @@ static NSString *g_matrixCacheRootPath = nil;
         return;
     }
     g_matrixCacheRootPath = path;
-    MatrixInfo(@"set matrix cache root path: %@", g_matrixCacheRootPath);
+    MatrixInfo(@"设置 Matrix 缓存根路径: %@", g_matrixCacheRootPath);
 }
 
 @end
