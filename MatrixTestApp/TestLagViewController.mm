@@ -28,6 +28,7 @@
 @property (nonatomic, strong) UIButton *costCPUBtn;
 @property (nonatomic, strong) UIButton *testResponseBtn;
 @property (nonatomic, strong) UIButton *testIOBtn;
+@property (nonatomic, strong) UIButton *getLagLogPathBtn;
 
 @property (nonatomic, assign) BOOL bCostCPUNow;
 
@@ -120,7 +121,14 @@
     [_stopBlockMonitorBtn setTitle:@"Stop Block Monitor" forState:UIControlStateNormal];
     [_mainScrollView addSubview:_stopBlockMonitorBtn];
     
-    [_mainScrollView setContentSize:CGSizeMake(self.view.frame.size.width, _stopBlockMonitorBtn.frame.origin.y + btnHeight + btnGap)];
+    contentY = contentY + btnHeight + btnGap;
+    
+    _getLagLogPathBtn = [Utility genBigBlueButtonWithFrame:CGRectMake(contentX, contentY, btnWidth, btnHeight)];
+    [_getLagLogPathBtn addTarget:self action:@selector(showLagLogPath) forControlEvents:UIControlEventTouchUpInside];
+    [_getLagLogPathBtn setTitle:@"获取卡顿日志路径" forState:UIControlStateNormal];
+    [_mainScrollView addSubview:_getLagLogPathBtn];
+    
+    [_mainScrollView setContentSize:CGSizeMake(self.view.frame.size.width, _getLagLogPathBtn.frame.origin.y + btnHeight + btnGap)];
     
 }
 
@@ -172,6 +180,33 @@
 {
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Hi" message:@"" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)showLagLogPath
+{
+    NSString *lagLogPath = [[MatrixHandler sharedInstance] getLagLogPath];
+    NSLog(@"卡顿日志路径: %@", lagLogPath);
+    
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"卡顿日志路径" 
+                                                                              message:lagLogPath 
+                                                                       preferredStyle:UIAlertControllerStyleAlert];
+    
+    [alertController addAction:[UIAlertAction actionWithTitle:@"复制路径" 
+                                                        style:UIAlertActionStyleDefault 
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+        UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+        pasteboard.string = lagLogPath;
+        
+        UIAlertController *copyAlert = [UIAlertController alertControllerWithTitle:@"已复制" 
+                                                                            message:@"日志路径已复制到剪贴板" 
+                                                                     preferredStyle:UIAlertControllerStyleAlert];
+        [copyAlert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [self presentViewController:copyAlert animated:YES completion:nil];
+    }]];
+    
+    [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    
     [self presentViewController:alertController animated:YES completion:nil];
 }
 

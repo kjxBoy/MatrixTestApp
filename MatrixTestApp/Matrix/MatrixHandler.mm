@@ -16,6 +16,7 @@
 
 #import "MatrixHandler.h"
 #import <Matrix/WCCrashBlockFileHandler.h>
+#import <Matrix/Matrix.h>
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 #import "TextViewController.h"
@@ -97,6 +98,16 @@ void kscrash_crashCallback(const KSCrashReportWriter *writer)
 - (WCMemoryStatPlugin *)getMemoryStatPlugin
 {
     return m_msPlugin;
+}
+
+- (NSString *)getLagLogPath
+{
+    // 构造日志路径: Library/Caches/Matrix/CrashBlock
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+    NSString *cachePath = [paths firstObject];
+    NSString *matrixPath = [cachePath stringByAppendingPathComponent:@"Matrix"];
+    NSString *crashBlockPath = [matrixPath stringByAppendingPathComponent:@"CrashBlock"];
+    return crashBlockPath;
 }
 
 // ============================================================================

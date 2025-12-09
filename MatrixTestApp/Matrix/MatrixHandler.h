@@ -27,4 +27,6 @@
 
 - (WCMemoryStatPlugin *)getMemoryStatPlugin;
 
+- (NSString *)getLagLogPath;
+
 @end

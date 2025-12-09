@@ -23,4 +23,6 @@
 
 + (UIButton *)genBigRedButtonWithFrame:(CGRect)btnFrame;
 
++ (UIButton *)genBigBlueButtonWithFrame:(CGRect)btnFrame;
+
 @end

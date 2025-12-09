@@ -44,4 +44,14 @@
     return btn;
 }
 
++ (UIButton *)genBigBlueButtonWithFrame:(CGRect)btnFrame
+{
+    UIButton *btn = [[UIButton alloc] initWithFrame:btnFrame];
+    [btn setBackgroundColor:UIColorFromRGB(0x1989FA)];
+    [btn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    btn.layer.cornerRadius = 4;
+    btn.clipsToBounds = YES;
+    return btn;
+}
+
 @end
