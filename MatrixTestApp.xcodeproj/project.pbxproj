@@ -95,7 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				E0EC90BF27BE4FA10050CF6F /* Matrix.xcodeproj */,
-				114E671620A995F70045083D /* MatrixDemo */,
+				114E671620A995F70045083D /* MatrixTestApp */,
 				114E671520A995F70045083D /* Products */,
 				114E672D20A9963C0045083D /* Frameworks */,
 			);
@@ -109,7 +109,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		114E671620A995F70045083D /* MatrixDemo */ = {
+		114E671620A995F70045083D /* MatrixTestApp */ = {
 			isa = PBXGroup;
 			children = (
 				115CE43F221E8F9300D2B354 /* Util */,
@@ -173,9 +173,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		114E671320A995F70045083D /* MatrixDemo */ = {
+		114E671320A995F70045083D /* MatrixTestApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 114E672A20A995F90045083D /* Build configuration list for PBXNativeTarget "MatrixDemo" */;
+			buildConfigurationList = 114E672A20A995F90045083D /* Build configuration list for PBXNativeTarget "MatrixTestApp" */;
 			buildPhases = (
 				114E671020A995F70045083D /* Sources */,
 				114E671120A995F70045083D /* Frameworks */,
@@ -224,7 +224,7 @@
 			);
 			projectRoot = "";
 			targets = (
-				114E671320A995F70045083D /* MatrixDemo */,
+				114E671320A995F70045083D /* MatrixTestApp */,
 			);
 		};
 /* End PBXProject section */
@@ -405,6 +405,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = XMVVGSCY2Q;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -427,6 +428,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				DEVELOPMENT_TEAM = XMVVGSCY2Q;
 				ENABLE_BITCODE = NO;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -456,7 +459,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		114E672A20A995F90045083D /* Build configuration list for PBXNativeTarget "MatrixDemo" */ = {
+		114E672A20A995F90045083D /* Build configuration list for PBXNativeTarget "MatrixTestApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				114E672B20A995F90045083D /* Debug */,

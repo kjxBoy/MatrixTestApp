@@ -1,0 +1,109 @@
+================================================================================
+🔍 Matrix 报告符号化工具
+================================================================================
+
+📋 报告信息:
+   原始路径: /Users/momo/Library/Developer/CoreSimulator/Devices/50368CDE-2A12-45E6-86F9-58019222B07C/data/Containers/Bundle/Application/034B32ED-EEEE-4B99-BE5C-5BE91CA65C17/MatrixTestApp.app/MatrixTestApp
+   UUID: 370FC5FC-324F-3816-BCD8-108964323291
+
+✅ 使用报告中的路径
+📱 应用二进制: /Users/momo/Library/Developer/CoreSimulator/Devices/50368CDE-2A12-45E6-86F9-58019222B07C/data/Containers/Bundle/Application/034B32ED-EEEE-4B99-BE5C-5BE91CA65C17/MatrixTestApp.app/MatrixTestApp
+📍 加载地址: 0x1001fc000
+🖥️  CPU 架构: arm64
+
+🔍 分析所有线程...
+
+✅ 找到主线程: Thread 0 - 未命名
+⚠️  找到崩溃线程: Thread 3 - 未命名
+
+================================================================================
+📋 主线程: Thread 0
+   名称: 未命名
+================================================================================
+
+📊 共 15 个栈帧，其中 0 个应用代码
+
+⚠️  未识别出应用代码栈帧，将尝试符号化所有地址
+
+--------------------------------------------------------------------------------
+    0  CoreFoundation            0x1804aabf8       
+👉  1  ???                       0x10029381c       
+      __40-[MatrixTester generateMainThreadLagLog]_block_invoke (in MatrixTestApp) (MatrixTester.mm:156)
+    2  libdispatch (GCD)         0x100514cd8       
+    3  libdispatch (GCD)         0x1005165d0       
+    4  libdispatch (GCD)         0x10052641c       
+    5  libdispatch (GCD)         0x100525f40       
+    6  CoreFoundation            0x18041cdac       
+    7  CoreFoundation            0x180417308       
+    8  CoreFoundation            0x1804166f4       
+    9  GraphicsServices          0x1905e5b10       
+   10  UIKit                     0x185b319dc       
+   11  UIKit                     0x185b35bd4       
+👉 12  ???                       0x100204f10       
+      main (in MatrixTestApp) (main.mm:26)
+   13  ???                       0x1005b1410        (未知库)
+   14  ???                       0x100732274        (未知库)
+--------------------------------------------------------------------------------
+
+✅ 该线程成功符号化 2 个地址
+
+================================================================================
+📋 崩溃线程: Thread 3
+   名称: 未命名
+================================================================================
+
+📊 共 10 个栈帧，其中 0 个应用代码
+
+⚠️  未识别出应用代码栈帧，将尝试符号化所有地址
+
+--------------------------------------------------------------------------------
+    0  ???                       0x10023677c       
+      kscm_reportUserException (in MatrixTestApp) (KSCrashMonitor_User.c:95)
+    1  ???                       0x1002817a8       
+      kscrash_reportUserException (in MatrixTestApp) (KSCrashC.c:312)
+    2  ???                       0x1002a6bd0       
+      -[KSCrash reportUserException:reason:language:lineOfCode:stackTrace:logAllThreads:enableSnapshot:terminateProgram:writeCpuUsage:dumpFilePath:dumpType:] (in MatrixTestApp) (KSCrash.m:444)
+    3  ???                       0x100230854       
+      +[WCDumpInterface dumpReportWithReportType:withExceptionReason:suspendAllThreads:enableSnapshot:writeCpuUsage:selfDefinedPath:] (in MatrixTestApp) (WCDumpInterface.mm:48)
+    4  ???                       0x10023067c       
+      +[WCDumpInterface dumpReportWithReportType:suspendAllThreads:enableSnapshot:] (in MatrixTestApp) (WCDumpInterface.mm:27)
+    5  ???                       0x10025aa0c       
+      -[WCBlockMonitorMgr dumpFileWithType:] (in MatrixTestApp) (WCBlockMonitorMgr.mm:1128)
+    6  ???                       0x100256f78       
+      -[WCBlockMonitorMgr threadProc] (in MatrixTestApp) (WCBlockMonitorMgr.mm:574)
+    7  Foundation                0x180f46280       
+    8  libsystem_*               0x1006e76f8       
+    9  libsystem_*               0x1006e2940       
+--------------------------------------------------------------------------------
+
+✅ 该线程成功符号化 7 个地址
+
+================================================================================
+📊 总结: 共符号化 9 个地址
+================================================================================
+
+💡 如何阅读报告:
+   👉 标记的是你的应用代码 - 重点关注这些
+   📌 主线程的堆栈通常是导致卡顿的真正原因
+   📂 文件名和行号在符号化信息中显示
+
+📚 堆栈说明:
+   • 应用代码: 你的应用源文件（带 👉 标记）
+   • Matrix框架: KSCrash*, WC*, Matrix* 等监控框架代码
+   • 系统库: UIKit, Foundation, GCD 等 iOS 系统框架
+   • (符号化失败): 应用代码但无调试信息（可能是 Release 编译）
+
+================================================================================
+🎯 发现的应用代码位置（重点关注）:
+================================================================================
+
+📍 [主线程] MatrixTester.mm:156
+   __40-[MatrixTester generateMainThreadLagLog]_block_invoke (in MatrixTestApp) (MatrixTester.mm:156)
+
+📍 [主线程] main.mm:26
+   main (in MatrixTestApp) (main.mm:26)
+
+================================================================================
+
+
+================================================================================
