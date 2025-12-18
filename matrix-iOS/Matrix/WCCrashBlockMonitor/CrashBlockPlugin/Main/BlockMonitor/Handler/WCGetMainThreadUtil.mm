@@ -96,6 +96,9 @@
     // 遍历堆栈，通过回调返回每一帧的程序计数器(PC)地址
     for (int i = 0; i < backTraceLength; i++) {
         NSUInteger pc = backtraceBuffer[i];
+        
+        NSLog(@"kjx -- %lx", pc);
+        
         saveResultBlock(pc);  // 调用回调，传递PC地址
     }
     // 返回线程总数
