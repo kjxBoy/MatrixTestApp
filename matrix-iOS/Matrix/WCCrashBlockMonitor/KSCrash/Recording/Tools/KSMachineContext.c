@@ -101,20 +101,166 @@ KSThread ksmc_getThreadFromContext(const KSMachineContext *const context) {
     return context->thisThread;
 }
 
+/**
+ * ============================================================================
+ * 函数：ksmc_getContextForThread
+ * ============================================================================
+ * 
+ * 功能：获取指定线程的机器上下文（寄存器状态）
+ * 
+ * 这是获取线程堆栈的关键步骤！
+ * 通过 Mach 内核 API 获取线程的寄存器快照，包括：
+ * - PC (Program Counter): 当前执行的指令地址
+ * - FP (Frame Pointer, x29): 帧指针，用于遍历调用栈
+ * - SP (Stack Pointer, x31): 栈指针
+ * - LR (Link Register, x30): 链接寄存器（返回地址）
+ * - x0-x28: 通用寄存器
+ * 
+ * @param thread 目标线程（必须已被 thread_suspend 挂起）
+ * @param destinationContext 输出参数，存储机器上下文
+ * @param isCrashedContext 是否是崩溃上下文（崩溃时需要额外信息）
+ * @return 成功返回 true
+ */
 bool ksmc_getContextForThread(KSThread thread, KSMachineContext *destinationContext, bool isCrashedContext) {
+    // ========================================================================
+    // 日志：记录函数调用信息
+    // ========================================================================
     KSLOG_DEBUG("Fill thread 0x%x context into %p. is crashed = %d", thread, destinationContext, isCrashedContext);
+    
+    // ========================================================================
+    // 步骤1：初始化目标上下文（清零）
+    // ========================================================================
+    // 确保所有字段都是干净的状态
     memset(destinationContext, 0, sizeof(*destinationContext));
+    
+    // ========================================================================
+    // 步骤2：设置基本属性
+    // ========================================================================
+    
+    // 保存线程ID
     destinationContext->thisThread = (thread_t)thread;
+    
+    // 判断是否是当前线程
+    // 注意：如果是当前线程，无法通过 thread_get_state 获取准确的寄存器状态
+    //      因为当前线程的寄存器正在被使用（执行此函数）
     destinationContext->isCurrentThread = thread == ksthread_self();
+    
+    // 是否是崩溃上下文
+    // 崩溃时需要收集更多信息（如所有线程列表、栈溢出检测）
     destinationContext->isCrashedContext = isCrashedContext;
+    
+    // 是否是信号上下文
+    // false: 此处通过线程API获取，不是通过信号处理器
+    // 如果是信号上下文，应使用 ksmc_getContextForSignal 函数
     destinationContext->isSignalContext = false;
+    
+    // ========================================================================
+    // 步骤3：获取 CPU 状态（寄存器）
+    // ========================================================================
+    /*
+     * ksmc_canHaveCPUState 判断是否可以获取 CPU 状态：
+     * 
+     * 返回 true 的条件：
+     * - 不是当前线程 OR 是信号上下文
+     * 
+     * 返回 false 的条件：
+     * - 是当前线程 AND 不是信号上下文
+     * 
+     * 为什么当前线程无法获取？
+     * - 当前线程的寄存器正在被使用（执行此函数）
+     * - FP 指向当前函数的栈帧，不是目标位置
+     * - PC 是此函数的指令地址，不是卡顿点
+     * - 获取到的状态不准确，没有意义
+     * 
+     * 例外：信号上下文
+     * - 信号处理器会保存触发信号时的寄存器状态
+     * - 这个状态是准确的（信号发生瞬间的快照）
+     * - 可以用于堆栈回溯
+     */
     if (ksmc_canHaveCPUState(destinationContext)) {
+        /*
+         * kscpu_getState 的作用：
+         * 
+         * 1. 调用 thread_get_state 系统调用：
+         *    kern_return_t thread_get_state(
+         *        thread_act_t thread,              // 目标线程
+         *        thread_state_flavor_t flavor,     // 状态类型
+         *        thread_state_t state,             // 输出缓冲区
+         *        mach_msg_type_number_t *count     // 缓冲区大小
+         *    );
+         * 
+         * 2. 获取的寄存器（ARM64）：
+         *    - 通用寄存器: x0-x28
+         *    - 帧指针 (FP): x29
+         *    - 链接寄存器 (LR): x30
+         *    - 栈指针 (SP): x31
+         *    - 程序计数器 (PC): 当前指令地址
+         *    - 程序状态寄存器 (CPSR): 条件标志位等
+         * 
+         * 3. 数据保存位置：
+         *    destinationContext->machineContext
+         *    这是一个 _STRUCT_MCONTEXT 结构，包含所有寄存器
+         * 
+         * 4. 前提条件：
+         *    - 目标线程必须已被 thread_suspend 挂起
+         *    - 否则会返回 KERN_FAILURE
+         * 
+         * 5. 性能：
+         *    - 系统调用开销: ~3-5μs
+         *    - 数据复制: ~1-2μs
+         *    - 总计: ~5-10μs
+         */
         kscpu_getState(destinationContext);
     }
+    
+    // ========================================================================
+    // 步骤4：如果是崩溃上下文，获取额外信息
+    // ========================================================================
+    /*
+     * 崩溃时需要更完整的现场信息，用于生成崩溃报告
+     */
     if (ksmc_isCrashedContext(destinationContext)) {
+        // --------------------------------------------------------------------
+        // 4.1 检测是否是栈溢出
+        // --------------------------------------------------------------------
+        /*
+         * isStackOverflow 的实现：
+         * 1. 初始化堆栈游标
+         * 2. 遍历堆栈，直到达到 KSSC_STACK_OVERFLOW_THRESHOLD（通常 200-300 层）
+         * 3. 如果达到阈值仍未到达栈底，判定为栈溢出
+         * 
+         * 栈溢出的常见原因：
+         * - 无限递归
+         * - 递归深度过大
+         * - 栈空间配置过小
+         * 
+         * 检测意义：
+         * - 崩溃报告中标注是否栈溢出
+         * - 帮助开发者快速定位问题类型
+         */
         destinationContext->isStackOverflow = isStackOverflow(destinationContext);
+        
+        // --------------------------------------------------------------------
+        // 4.2 获取所有线程列表
+        // --------------------------------------------------------------------
+        /*
+         * getThreadList 的作用：
+         * 1. 调用 task_threads 获取当前进程的所有线程
+         * 2. 保存到 destinationContext->allThreads[]
+         * 3. 记录线程数量到 destinationContext->threadCount
+         * 
+         * 用途：
+         * - 崩溃报告中包含所有线程的堆栈
+         * - 帮助分析线程间的相互关系
+         * - 检测死锁、竞态条件等问题
+         * 
+         * 注意：
+         * - 仅在崩溃时调用（性能考虑）
+         * - 正常的堆栈采集不需要所有线程信息
+         */
         getThreadList(destinationContext);
     }
+    
     KSLOG_TRACE("Context retrieved.");
     return true;
 }

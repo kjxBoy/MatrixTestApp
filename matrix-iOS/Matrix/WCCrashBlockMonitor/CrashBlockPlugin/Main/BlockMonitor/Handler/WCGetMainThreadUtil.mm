@@ -93,11 +93,14 @@
     // 使用KSCrash的工具函数获取主线程的堆栈回溯
     backTraceLength = kssc_backtraceCurrentThread(mainThread, backtraceBuffer, (int)maxEntries);
 
+    
+    // NSLog(@"kjx -- backTraceLength - %d", backTraceLength);
+    
     // 遍历堆栈，通过回调返回每一帧的程序计数器(PC)地址
     for (int i = 0; i < backTraceLength; i++) {
         NSUInteger pc = backtraceBuffer[i];
         
-        NSLog(@"kjx -- %lx", pc);
+       // NSLog(@"kjx -- 0x%lx", pc);
         
         saveResultBlock(pc);  // 调用回调，传递PC地址
     }
