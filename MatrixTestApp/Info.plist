@@ -46,5 +46,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>MatrixServerURL</key>
+	<string>http://localhost:8080</string>
 </dict>
 </plist>

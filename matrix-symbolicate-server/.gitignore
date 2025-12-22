@@ -1,0 +1,38 @@
+# 二进制文件
+matrix-server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# 测试文件
+*.test
+*.out
+
+# Go 工作空间文件
+go.work
+
+# 依赖目录
+vendor/
+
+# 上传的文件
+uploads/
+dsyms/
+reports/
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# IDE 配置
+.vscode/
+.idea/
+*.iml
+

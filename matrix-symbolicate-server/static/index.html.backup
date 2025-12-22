@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrix 卡顿日志符号化平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #5568d3;
+        }
+
+        .upload-area.dragover {
+            background: #dde4ff;
+            border-color: #5568d3;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .report-viewer {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .report-viewer .app-code {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+
+        .report-viewer .address {
+            color: #ce9178;
+        }
+
+        .report-viewer .symbol {
+            color: #9cdcfe;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+        }
+
+        .file-details {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Matrix 卡顿日志符号化平台</h1>
+            <p>上传符号表和卡顿日志，自动解析和展示详细堆栈信息</p>
+        </div>
+
+        <div class="card">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('upload')">📤 上传</button>
+                <button class="tab" onclick="switchTab('dsyms')">📦 符号表管理</button>
+                <button class="tab" onclick="switchTab('reports')">📋 报告列表</button>
+            </div>
+
+            <!-- 上传标签页 -->
+            <div id="upload-tab" class="tab-content active">
+                <h2>📤 上传文件</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">1️⃣ 上传符号表 (dSYM)</h3>
+                    <div class="upload-area" id="dsym-upload-area" onclick="document.getElementById('dsym-file').click()">
+                        <div class="upload-icon">📦</div>
+                        <div class="upload-text">点击或拖拽上传 dSYM 文件</div>
+                        <div class="upload-hint">支持 .dSYM.zip 或 .app 文件</div>
+                    </div>
+                    <input type="file" id="dsym-file" accept=".zip,.app" onchange="uploadDsym(this.files[0])">
+                    <div id="dsym-progress"></div>
+                </div>
+
+                <div>
+                    <h3 style="color: #667eea; margin-bottom: 15px;">2️⃣ 上传卡顿日志</h3>
+                    <div class="upload-area" id="report-upload-area" onclick="document.getElementById('report-file').click()">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">点击或拖拽上传日志文件</div>
+                        <div class="upload-hint">支持 .json 或 .txt 文件</div>
+                    </div>
+                    <input type="file" id="report-file" accept=".json,.txt" onchange="uploadReport(this.files[0])">
+                    <div id="report-progress"></div>
+                </div>
+            </div>
+
+            <!-- 符号表管理标签页 -->
+            <div id="dsyms-tab" class="tab-content">
+                <h2>📦 符号表列表</h2>
+                <div id="dsym-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>加载中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 报告列表标签页 -->
+            <div id="reports-tab" class="tab-content">
+                <h2>📋 卡顿报告列表</h2>
+                <div id="report-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        // 标签页切换
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+
+            if (tabName === 'dsyms') {
+                loadDsymList();
+            } else if (tabName === 'reports') {
+                loadReportList();
+            }
+        }
+
+        // 拖拽上传
+        function setupDragDrop(areaId, fileInputId) {
+            const area = document.getElementById(areaId);
+            
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('dragover');
+            });
+
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    if (areaId === 'dsym-upload-area') {
+                        uploadDsym(files[0]);
+                    } else {
+                        uploadReport(files[0]);
+                    }
+                }
+            });
+        }
+
+        setupDragDrop('dsym-upload-area', 'dsym-file');
+        setupDragDrop('report-upload-area', 'report-file');
+
+        // 上传符号表
+        async function uploadDsym(file) {
+            if (!file) return;
+
+            const progressDiv = document.getElementById('dsym-progress');
+            progressDiv.innerHTML = `
+                <div class="file-info">
+                    <div class="file-icon">📦</div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">大小: ${formatSize(file.size)}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(API_BASE + '/dsym/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    progressDiv.querySelector('.progress-fill').style.width = '100%';
+                    setTimeout(() => {
+                        showAlert('success', `✅ 符号表上传成功！UUID: ${result.uuid || '未知'}`);
+                        progressDiv.innerHTML = '';
+                        document.getElementById('dsym-file').value = '';
+                    }, 500);
+                } else {
+                    showAlert('error', '❌ ' + result.error);
+                    progressDiv.innerHTML = '';
+                }
+            } catch (error) {
+                showAlert('error', '❌ 上传失败: ' + error.message);
+                progressDiv.innerHTML = '';
+            }
+        }
+
+        // 上传报告
+        async function uploadReport(file) {
+            if (!file) return;
+
+            const progressDiv = document.getElementById('report-progress');
+            progressDiv.innerHTML = `
+                <div class="file-info">
+                    <div class="file-icon">📄</div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">大小: ${formatSize(file.size)}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(API_BASE + '/report/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    progressDiv.querySelector('.progress-fill').style.width = '100%';
+                    
+                    // 自动符号化
+                    setTimeout(async () => {
+                        showAlert('success', '📥 报告上传成功，正在自动符号化...');
+                        await symbolicateReport(result.report_id);
+                        progressDiv.innerHTML = '';
+                        document.getElementById('report-file').value = '';
+                    }, 500);
+                } else {
+                    showAlert('error', '❌ ' + result.error);
+                    progressDiv.innerHTML = '';
+                }
+            } catch (error) {
+                showAlert('error', '❌ 上传失败: ' + error.message);
+                progressDiv.innerHTML = '';
+            }
+        }
+
+        // 符号化报告
+        async function symbolicateReport(reportId, dsymFile = null) {
+            try {
+                const response = await fetch(API_BASE + '/report/symbolicate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        report_id: reportId,
+                        dsym_file: dsymFile
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('success', '✅ 符号化成功！');
+                    viewReport(reportId);
+                } else {
+                    showAlert('error', '❌ ' + result.error);
+                }
+            } catch (error) {
+                showAlert('error', '❌ 符号化失败: ' + error.message);
+            }
+        }
+
+        // 加载符号表列表
+        async function loadDsymList() {
+            const container = document.getElementById('dsym-list');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><div>加载中...</div></div>';
+
+            try {
+                const response = await fetch(API_BASE + '/dsym/list');
+                const data = await response.json();
+
+                if (data.dsyms && data.dsyms.length > 0) {
+                    let html = '<table class="table"><thead><tr><th>文件名</th><th>UUID</th><th>架构</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+                    
+                    data.dsyms.forEach(dsym => {
+                        html += `
+                            <tr>
+                                <td>${dsym.filename}</td>
+                                <td><code>${dsym.uuid || '-'}</code></td>
+                                <td>${dsym.arch || '-'}</td>
+                                <td>${formatSize(dsym.size)}</td>
+                                <td>${formatDate(dsym.modified)}</td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="btn btn-danger btn-small" onclick="deleteDsym('${dsym.filename}')">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📦</div>
+                            <h3>暂无符号表</h3>
+                            <p>请先上传 dSYM 文件</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 加载报告列表
+        async function loadReportList() {
+            const container = document.getElementById('report-list');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><div>加载中...</div></div>';
+
+            try {
+                const response = await fetch(API_BASE + '/report/list');
+                const data = await response.json();
+
+                if (data.reports && data.reports.length > 0) {
+                    let html = '<table class="table"><thead><tr><th>文件名</th><th>状态</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+                    
+                    data.reports.forEach(report => {
+                        const badge = report.symbolicated 
+                            ? '<span class="badge badge-success">✅ 已符号化</span>'
+                            : '<span class="badge badge-warning">⏳ 未符号化</span>';
+                        
+                        html += `
+                            <tr>
+                                <td>${report.filename}</td>
+                                <td>${badge}</td>
+                                <td>${formatSize(report.size)}</td>
+                                <td>${formatDate(report.uploaded)}</td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="btn btn-primary btn-small" onclick="viewReport('${report.id}')">查看</button>
+                                        ${!report.symbolicated ? `<button class="btn btn-primary btn-small" onclick="symbolicateReport('${report.id}')">符号化</button>` : ''}
+                                        <button class="btn btn-danger btn-small" onclick="deleteReport('${report.id}')">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <h3>暂无报告</h3>
+                            <p>请先上传卡顿日志文件</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-error">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 查看报告
+        async function viewReport(reportId) {
+            try {
+                const response = await fetch(API_BASE + '/report/' + reportId);
+                const data = await response.json();
+
+                // 创建模态框显示报告
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+                
+                const content = document.createElement('div');
+                content.style.cssText = 'background: white; border-radius: 12px; max-width: 1000px; width: 100%; max-height: 90vh; overflow: auto; padding: 30px;';
+                
+                content.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="color: #667eea;">📊 报告详情</h2>
+                        <button class="btn btn-primary btn-small" onclick="this.closest('.modal').remove()">关闭</button>
+                    </div>
+                    <div class="report-viewer">${formatReportForDisplay(data)}</div>
+                `;
+                
+                modal.className = 'modal';
+                modal.appendChild(content);
+                document.body.appendChild(modal);
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.remove();
+                });
+            } catch (error) {
+                showAlert('error', '❌ 加载报告失败: ' + error.message);
+            }
+        }
+
+        // 格式化报告显示
+        function formatReportForDisplay(data) {
+            return JSON.stringify(data, null, 2)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/("is_app_code": true)/g, '<span class="app-code">$1</span>')
+                .replace(/(0x[0-9a-fA-F]+)/g, '<span class="address">$1</span>')
+                .replace(/("symbolicated_name": ".*")/g, '<span class="symbol">$1</span>');
+        }
+
+        // 删除符号表
+        async function deleteDsym(filename) {
+            if (!confirm('确定要删除这个符号表吗？')) return;
+
+            try {
+                const response = await fetch(API_BASE + '/dsym/' + encodeURIComponent(filename), {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('success', '✅ 删除成功');
+                    loadDsymList();
+                } else {
+                    const data = await response.json();
+                    showAlert('error', '❌ ' + data.error);
+                }
+            } catch (error) {
+                showAlert('error', '❌ 删除失败: ' + error.message);
+            }
+        }
+
+        // 删除报告
+        async function deleteReport(reportId) {
+            if (!confirm('确定要删除这个报告吗？')) return;
+
+            try {
+                const response = await fetch(API_BASE + '/report/' + reportId, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('success', '✅ 删除成功');
+                    loadReportList();
+                } else {
+                    const data = await response.json();
+                    showAlert('error', '❌ ' + data.error);
+                }
+            } catch (error) {
+                showAlert('error', '❌ 删除失败: ' + error.message);
+            }
+        }
+
+        // 显示提示
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 2000; min-width: 300px; animation: slideIn 0.3s;';
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.style.animation = 'slideOut 0.3s';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 3000);
+        }
+
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // 添加动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
+
