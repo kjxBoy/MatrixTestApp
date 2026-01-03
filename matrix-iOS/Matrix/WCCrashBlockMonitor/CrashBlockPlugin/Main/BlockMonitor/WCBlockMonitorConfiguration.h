@@ -62,19 +62,138 @@ const static int g_defaultDumpDailyLimit = 100;
 /// define the count of the main thread stack that be saved
 @property (nonatomic, assign) uint32_t mainThreadCount DEPRECATED_MSG_ATTRIBUTE("depends on runloopTimeOut");
 
-/// define the limit of singe core's comsuption
+/**
+ * CPU使用率阈值（瞬时检测）
+ * 
+ * 默认值：80.0（80%）
+ * 
+ * 说明：
+ * - 用于瞬时CPU过高检测
+ * - 当App CPU使用率超过此值时，触发onBlockMonitorCurrentCPUTooHigh回调
+ * - 注意：这是单核的百分比，不是总CPU
+ * - 例如：设置为80，表示单核CPU使用率超过80%时触发
+ * 
+ * 与核心数的关系：
+ * - 如果设备有8个核心，App占用6个核心（600%）
+ * - 单核平均：600 / 8 = 75%，不会触发
+ * - 如果App占用7个核心（700%），单核平均87.5%，会触发
+ * 
+ * 建议值：
+ * - 开发环境：60-70（更敏感，便于发现问题）
+ * - 生产环境：80-90（避免误报）
+ * 
+ * 使用场景：
+ * - 快速捕捉CPU峰值
+ * - 实时性能监控
+ * - 与bGetCPUHighLog配合生成转储报告
+ */
 @property (nonatomic, assign) float limitCPUPercent;
 
-/// enable printing the cpu usage in the log
+/**
+ * 是否在日志中打印CPU使用率
+ * 
+ * 默认值：NO
+ * 
+ * 说明：
+ * - 当此选项开启且CPU > 40%时，会打印日志
+ * - 日志包含：App CPU使用率、设备整体CPU使用率
+ * - 格式："应用 CPU 使用率: %.2f，设备: %.2f"
+ * 
+ * 性能影响：
+ * - 轻微（仅影响日志输出）
+ * 
+ * 建议：
+ * - 开发环境：YES（便于调试）
+ * - 生产环境：NO（减少日志量）
+ */
 @property (nonatomic, assign) BOOL bPrintCPUUsage;
 
-/// enable get the log of CPU that CPU too high ( current CPU usage > limitCPUPercent * cpu_count )
+/**
+ * 是否生成CPU高占用的转储报告
+ * 
+ * 默认值：NO
+ * 
+ * 说明：
+ * - 当瞬时CPU过高时，是否生成EDumpType_CPUBlock类型的转储报告
+ * - 需要同时满足以下条件才会生成：
+ *   1. bGetCPUHighLog = YES
+ *   2. 当前CPU > limitCPUPercent
+ *   3. bGetPowerConsumeStack = YES（需要堆栈收集器）
+ *   4. isCPUHighBlock返回YES（有采集到高CPU堆栈）
+ * 
+ * 转储报告包含：
+ * - CPU高占用线程的堆栈
+ * - 每个线程的CPU使用率
+ * - 设备和App的整体CPU使用率
+ * - 可以用于符号化和分析
+ * 
+ * 性能影响：
+ * - 中等（生成转储需要暂停线程、采集堆栈）
+ * - 建议配合dumpDailyLimit限制每日上报量
+ * 
+ * 建议：
+ * - 开发环境：YES（便于定位CPU问题）
+ * - 生产环境：YES（但要设置dumpDailyLimit）
+ */
 @property (nonatomic, assign) BOOL bGetCPUHighLog;
 
-/// enable get the "cost cpu" callstack
+/**
+ * 是否收集耗电堆栈（平均CPU检测）
+ * 
+ * 默认值：NO
+ * 
+ * 说明：
+ * - 开启后会创建WCPowerConsumeStackCollector
+ * - 每次check时，在获取CPU使用率的同时采集高CPU线程的堆栈
+ * - 用于WCCPUHandler的平均CPU检测
+ * - 当检测到持续高CPU时，生成调用树（Call Tree）
+ * 
+ * 功能：
+ * 1. 实时采集：每次check采集当前高CPU线程的堆栈
+ * 2. 堆栈池：维护最近100个堆栈样本
+ * 3. 调用树：当触发平均CPU过高时，生成火焰图数据
+ * 4. 异步回调：通过powerConsumeStackCollectorConclude回调返回
+ * 
+ * 与瞬时检测的区别：
+ * - 瞬时检测（bGetCPUHighLog）：捕捉瞬间的CPU峰值
+ * - 耗电检测（bGetPowerConsumeStack）：分析60秒内的持续高CPU
+ * 
+ * 性能影响：
+ * - 较高（每次check都要遍历线程、采集堆栈）
+ * - 只有当CPU > powerConsumeStackCPULimit时才采集，减少开销
+ * 
+ * 建议：
+ * - 开发环境：YES（便于性能优化）
+ * - 生产环境：根据需求决定（耗电问题重要时开启）
+ */
 @property (nonatomic, assign) BOOL bGetPowerConsumeStack;
 
-/// define the value of CPU considered to be power consuming
+/**
+ * 耗电检测的CPU阈值
+ * 
+ * 默认值：80.0（80%）
+ * 
+ * 说明：
+ * - 用于WCCPUHandler的平均CPU检测
+ * - 用于WCPowerConsumeStackCollector的堆栈采集触发
+ * - 当App总CPU超过此值时：
+ *   1. WCCPUHandler开始累积CPU消耗
+ *   2. WCPowerConsumeStackCollector开始采集堆栈
+ * 
+ * 与limitCPUPercent的区别：
+ * - limitCPUPercent：瞬时检测的阈值（单核百分比）
+ * - powerConsumeStackCPULimit：耗电检测的阈值（总CPU百分比）
+ * 
+ * 检测机制：
+ * - 需要在60秒内平均CPU持续超过此值
+ * - 使用半区间检测过滤短暂峰值
+ * - 触发后进入60秒冷却期
+ * 
+ * 建议值：
+ * - 一般设置：70-80
+ * - 省电要求高：60-70
+ * - 性能要求高：80-90
+ */
 @property (nonatomic, assign) float powerConsumeStackCPULimit;
 
 /// enable to filter the same stack in one day, the stack be captured over "triggerToBeFilteredCount" times would be filtered
@@ -89,7 +208,23 @@ const static int g_defaultDumpDailyLimit = 100;
 /// enable printing the memory use
 @property (nonatomic, assign) BOOL bPrintMemomryUse;
 
-/// enable printing the cpu frequency
+/**
+ * 是否打印CPU频率
+ * 
+ * 默认值：NO
+ * 
+ * 说明：
+ * - 周期性打印CPU频率信息
+ * - 用于了解设备的CPU性能特征
+ * - 某些设备可能不支持查询CPU频率（返回0）
+ * 
+ * 性能影响：
+ * - 极小（仅sysctl调用）
+ * 
+ * 建议：
+ * - 开发环境：可选（用于设备性能分析）
+ * - 生产环境：NO（不是关键信息）
+ */
 @property (nonatomic, assign) BOOL bPrintCPUFrequency;
 
 /// enable get the "disk io" callstack

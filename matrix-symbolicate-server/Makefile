@@ -24,13 +24,13 @@ install:
 run:
 	@echo "🚀 启动服务..."
 	@mkdir -p uploads dsyms reports static
-	go run main.go symbolicate.go
+	go run .
 
 # 编译二进制
 build:
 	@echo "🔨 编译二进制文件..."
 	@mkdir -p bin
-	go build -o bin/matrix-server main.go symbolicate.go
+	go build -o bin/matrix-server .
 	@echo "✅ 编译完成: bin/matrix-server"
 
 # 清理文件

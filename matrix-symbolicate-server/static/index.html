@@ -318,6 +318,79 @@
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
         }
+
+        /* Loading 样式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(4px);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-box {
+            background: white;
+            padding: 30px 50px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 20px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .loading-tip {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        /* 按钮 loading 状态 */
+        .btn.loading {
+            position: relative;
+            color: transparent;
+            pointer-events: none;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
 </head>
 <body>
@@ -530,6 +603,9 @@
 
         // 符号化报告
         async function symbolicateReport(reportId, dsymFile = null) {
+            // 显示 loading
+            const loadingOverlay = showLoading('正在符号化...', '这可能需要几秒钟，请耐心等待');
+            
             try {
                 const response = await fetch(API_BASE + '/report/symbolicate', {
                     method: 'POST',
@@ -546,12 +622,45 @@
 
                 if (response.ok) {
                     showAlert('success', '✅ 符号化成功！');
-                    viewReport(reportId);
+                    await loadReportList(); // 刷新报告列表
+                    // 如果正在查看这个报告，刷新显示
+                    const modal = document.getElementById('report-modal');
+                    if (modal && modal.style.display === 'block') {
+                        viewReport(reportId);
+                    }
                 } else {
                     showAlert('error', '❌ ' + result.error);
                 }
             } catch (error) {
                 showAlert('error', '❌ 符号化失败: ' + error.message);
+            } finally {
+                // 隐藏 loading
+                hideLoading(loadingOverlay);
+            }
+        }
+
+        // 显示 loading 遮罩
+        function showLoading(text = '加载中...', tip = '') {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-box">
+                    <div class="spinner"></div>
+                    <div class="loading-text">${text}</div>
+                    ${tip ? `<div class="loading-tip">${tip}</div>` : ''}
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+
+        // 隐藏 loading 遮罩
+        function hideLoading(overlay) {
+            if (overlay && overlay.parentNode) {
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.parentNode.removeChild(overlay);
+                }, 300);
             }
         }
 
@@ -610,16 +719,35 @@
                 const data = await response.json();
 
                 if (data.reports && data.reports.length > 0) {
-                    let html = '<table class="table"><thead><tr><th>文件名</th><th>状态</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
+                    let html = '<table class="table"><thead><tr><th>文件名</th><th>类型</th><th>状态</th><th>大小</th><th>上传时间</th><th>操作</th></tr></thead><tbody>';
                     
                     data.reports.forEach(report => {
                         const badge = report.symbolicated 
                             ? '<span class="badge badge-success">✅ 已符号化</span>'
                             : '<span class="badge badge-warning">⏳ 未符号化</span>';
                         
+                        // 类型标签
+                        let typeBadge = '';
+                        if (report.dump_type) {
+                            const typeColors = {
+                                '主线程卡顿': '#ff6b6b',
+                                '后台主线程卡顿': '#feca57',
+                                'CPU 占用过高': '#ff9ff3',
+                                '耗电监控': '#48dbfb',
+                                '启动阻塞': '#ff9f43',
+                                '线程过多': '#ee5a6f',
+                                '被杀死前卡顿': '#c44569'
+                            };
+                            const color = typeColors[report.dump_type] || '#95afc0';
+                            typeBadge = `<span class="badge" style="background: ${color}; color: white;">${report.dump_type}</span>`;
+                        } else {
+                            typeBadge = '<span class="badge" style="background: #dfe6e9; color: #2d3436;">未知类型</span>';
+                        }
+                        
                         html += `
                             <tr>
                                 <td>${report.filename}</td>
+                                <td>${typeBadge}</td>
                                 <td>${badge}</td>
                                 <td>${formatSize(report.size)}</td>
                                 <td>${formatDate(report.uploaded)}</td>

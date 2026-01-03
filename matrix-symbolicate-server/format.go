@@ -12,6 +12,18 @@ import (
 func formatReportToAppleStyle(report map[string]interface{}) string {
 	var result strings.Builder
 
+	// 检查是否是耗电日志
+	dumpType := 0
+	if dt, ok := report["dump_type"].(float64); ok {
+		dumpType = int(dt)
+	}
+
+	// 耗电日志使用不同的格式化方式
+	if dumpType == 2011 { // EDumpType_PowerConsume
+		return formatPowerConsumeReport(report)
+	}
+
+	// 卡顿/崩溃日志的格式化
 	// 解析系统信息
 	result.WriteString(formatSystemInfo(report))
 	result.WriteString("\n")
@@ -612,4 +624,151 @@ func getDeviceName(machine string) string {
 		return fmt.Sprintf("%s (%s)", name, machine)
 	}
 	return machine
+}
+
+// formatPowerConsumeReport 格式化耗电监控报告
+func formatPowerConsumeReport(report map[string]interface{}) string {
+	var result strings.Builder
+
+	result.WriteString("🔋 Matrix 耗电监控报告\n")
+	result.WriteString(strings.Repeat("=", 80) + "\n\n")
+
+	// 系统信息
+	result.WriteString(formatSystemInfo(report))
+	result.WriteString("\n")
+
+	// 应用信息
+	result.WriteString(formatAppInfo(report))
+	result.WriteString("\n")
+
+	// 用户信息
+	result.WriteString(formatUserInfo(report))
+	result.WriteString("\n")
+
+	// 耗电堆栈信息
+	stackString, ok := report["stack_string"].([]interface{})
+	if !ok || len(stackString) == 0 {
+		result.WriteString("⚠️  未找到耗电堆栈数据\n")
+		return result.String()
+	}
+
+	result.WriteString(fmt.Sprintf("📊 耗电堆栈分析（共 %d 个采样点）\n", len(stackString)))
+	result.WriteString(strings.Repeat("-", 80) + "\n\n")
+
+	// 格式化每个堆栈树
+	for i, stack := range stackString {
+		result.WriteString(fmt.Sprintf("🔋 堆栈 #%d:\n", i+1))
+		if stackMap, ok := stack.(map[string]interface{}); ok {
+			formatPowerConsumeFrame(&result, stackMap, 0)
+		}
+		result.WriteString("\n")
+	}
+
+	result.WriteString(strings.Repeat("=", 80) + "\n")
+	result.WriteString("说明：\n")
+	result.WriteString("  - 每个堆栈帧后的数字表示该函数被采样到的次数\n")
+	result.WriteString("  - 缩进表示调用层级，子节点是从父节点调用的\n")
+	result.WriteString("  - 采样次数越多，说明该函数耗电越严重\n")
+
+	return result.String()
+}
+
+// formatPowerConsumeFrame 递归格式化耗电堆栈帧
+func formatPowerConsumeFrame(result *strings.Builder, frame map[string]interface{}, depth int) {
+	indent := strings.Repeat("  ", depth)
+
+	// 获取基本信息
+	objName := ""
+	if on, ok := frame["object_name"].(string); ok {
+		objName = on
+	}
+
+	symbolName := ""
+	if sn, ok := frame["symbol_name"].(string); ok && sn != "" && sn != "<redacted>" {
+		symbolName = sn
+	}
+
+	addr := uint64(0)
+	if a, ok := frame["instruction_address"].(float64); ok {
+		addr = uint64(a)
+	}
+
+	objAddr := uint64(0)
+	if oa, ok := frame["object_address"].(float64); ok {
+		objAddr = uint64(oa)
+	}
+
+	sampleCount := 0
+	if sc, ok := frame["sample"].(float64); ok {
+		sampleCount = int(sc)
+	}
+
+	imageName := ""
+	if in, ok := frame["image_name"].(string); ok {
+		imageName = filepath.Base(in)
+	}
+
+	// 检查是否有符号化信息
+	symbolicatedName := ""
+	if sn, ok := frame["symbolicated_name"].(string); ok && sn != "" {
+		symbolicatedName = sn
+	}
+
+	// 从 symbol_name 中提取库名（格式如 "funcName (in AppName)"）
+	libraryName := objName
+	if symbolName != "" && strings.Contains(symbolName, " (in ") {
+		start := strings.Index(symbolName, " (in ")
+		end := strings.LastIndex(symbolName, ")")
+		if start > 0 && end > start {
+			libraryName = symbolName[start+5 : end]
+		}
+	}
+	if libraryName == "" && imageName != "" {
+		libraryName = imageName
+	}
+
+	// 计算偏移量
+	offset := addr - objAddr
+
+	// 格式化输出 - 参考 battery2apple.py 的格式
+	if symbolicatedName != "" {
+		// 已符号化（应用自己的代码）
+		fileInfo := ""
+		if fileName, ok := frame["file_name"].(string); ok {
+			if lineNum, ok := frame["line_number"].(float64); ok {
+				fileInfo = fmt.Sprintf(" (%s:%d)", filepath.Base(fileName), int(lineNum))
+			}
+		}
+		
+		// 显示完整的符号化信息
+		result.WriteString(fmt.Sprintf("%s📍 [采样:%d次] %s%s\n", indent, sampleCount, symbolicatedName, fileInfo))
+		if libraryName != "" {
+			result.WriteString(fmt.Sprintf("%s    (%s + %d) [0x%x]\n", indent, libraryName, offset, addr))
+		} else {
+			result.WriteString(fmt.Sprintf("%s    [0x%x]\n", indent, addr))
+		}
+	} else if symbolName != "" && symbolName != "<redacted>" {
+		// 有原始符号名但未符号化（通常是系统库）
+		result.WriteString(fmt.Sprintf("%s📍 [采样:%d次] %s\n", indent, sampleCount, symbolName))
+		if libraryName != "" && offset > 0 {
+			result.WriteString(fmt.Sprintf("%s    (%s + %d) [0x%x]\n", indent, libraryName, offset, addr))
+		} else {
+			result.WriteString(fmt.Sprintf("%s    [0x%x]\n", indent, addr))
+		}
+	} else if libraryName != "" {
+		// 只有库名，没有符号（系统库未导出的函数）
+		result.WriteString(fmt.Sprintf("%s📍 [采样:%d次] (%s + %d) [0x%x]\n", indent, sampleCount, libraryName, offset, addr))
+	} else {
+		// 完全没有信息
+		result.WriteString(fmt.Sprintf("%s📍 [采样:%d次] 0x%x\n", indent, sampleCount, addr))
+	}
+
+	// 递归处理子帧
+	if children, ok := frame["child"].([]interface{}); ok && len(children) > 0 {
+		for _, child := range children {
+			if childMap, ok := child.(map[string]interface{}); ok {
+				formatPowerConsumeFrame(result, childMap, depth+1)
+			}
+		}
+	}
 }

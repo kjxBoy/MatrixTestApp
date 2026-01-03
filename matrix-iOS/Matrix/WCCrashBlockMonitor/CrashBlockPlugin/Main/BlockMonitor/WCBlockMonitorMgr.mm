@@ -275,7 +275,7 @@ static struct timeval g_tvRun;  // RunLoop开始运行的时间戳
 static BOOL g_bRun;  // RunLoop是否正在运行（YES表示正在处理任务）
 static struct timeval g_tvSuspend;  // App挂起（进入后台）的时间戳
 static CFRunLoopActivity g_runLoopActivity;  // 当前RunLoop的活动状态
-static struct timeval g_lastCheckTime;  // 上一次检查的时间戳
+static struct timeval g_lastCheckTime;  // 上一次CPU检查的时间戳
 
 // ============================================================================
 #pragma mark - 应用启动状态变量
@@ -951,8 +951,8 @@ float *kscrash_pointCpuHighThreadArrayCallBack(void) {
 
             // ====================================================================
             // 3.3 采集主线程堆栈（周期性采集）
-            // ====================================================================
-            
+            // ===================================================================
+#warning 退火算法主要体现在这里，这里面是一个双层循环sleep的过程，在退火状态下，会一直在这里面循环，减少日志的记录次数
             [self recordCurrentStack];
 
             // 如果收到停止信号，退出循环

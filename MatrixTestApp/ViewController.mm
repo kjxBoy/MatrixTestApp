@@ -23,6 +23,7 @@
 #import "TestCrashViewController.h"
 #import "TestLagViewController.h"
 #import "TestOOMViewController.h"
+#import "TestAsyncCPUViewController.h"
 #import "Utility.h"
 
 @interface ViewController ()
@@ -41,6 +42,7 @@
 @property (nonatomic, strong) UIButton *crashViewBtn;
 @property (nonatomic, strong) UIButton *lagViewBtn;
 @property (nonatomic, strong) UIButton *oomViewBtn;
+@property (nonatomic, strong) UIButton *asyncCPUViewBtn;
 
 @end
 
@@ -59,15 +61,14 @@
 {
     CGFloat btnHeight = 50.;
     CGFloat btnWidth = 200.;
-    CGFloat btnGap = 44.;
+    CGFloat btnGap = 20.;
     CGFloat contentX = (self.view.frame.size.width - btnWidth) / 2;
-    CGFloat contentY = (self.view.frame.size.height - (btnHeight * 3 + btnGap * 2)) / 2;
+    CGFloat contentY = (self.view.frame.size.height - (btnHeight * 4 + btnGap * 3)) / 2;
     
     _crashViewBtn = [Utility genBigGreenButtonWithFrame:CGRectMake(contentX, contentY, btnWidth, btnHeight)];
     [_crashViewBtn setTitle:@"Crash" forState:UIControlStateNormal];
     [_crashViewBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [_crashViewBtn addTarget:self action:@selector(enterCrashView) forControlEvents:UIControlEventTouchUpInside];
-
     [self.view addSubview:_crashViewBtn];
 
     contentY = contentY + btnHeight + btnGap;
@@ -79,10 +80,17 @@
 
     contentY = contentY + btnHeight + btnGap;
 
-    _lagViewBtn = [Utility genBigGreenButtonWithFrame:CGRectMake(contentX, contentY, btnWidth, btnHeight)];
-    [_lagViewBtn setTitle:@"Out Of Memory" forState:UIControlStateNormal];
-    [_lagViewBtn addTarget:self action:@selector(enterOOMView) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:_lagViewBtn];
+    _oomViewBtn = [Utility genBigGreenButtonWithFrame:CGRectMake(contentX, contentY, btnWidth, btnHeight)];
+    [_oomViewBtn setTitle:@"Out Of Memory" forState:UIControlStateNormal];
+    [_oomViewBtn addTarget:self action:@selector(enterOOMView) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_oomViewBtn];
+    
+    contentY = contentY + btnHeight + btnGap;
+    
+    _asyncCPUViewBtn = [Utility genBigGreenButtonWithFrame:CGRectMake(contentX, contentY, btnWidth, btnHeight)];
+    [_asyncCPUViewBtn setTitle:@"Async CPU Test" forState:UIControlStateNormal];
+    [_asyncCPUViewBtn addTarget:self action:@selector(enterAsyncCPUView) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:_asyncCPUViewBtn];
 }
 
 - (void)enterCrashView
@@ -100,6 +108,12 @@
 - (void)enterOOMView
 {
     TestOOMViewController *vc = [[TestOOMViewController alloc] init];
+    [self.navigationController pushViewController:vc animated:YES];
+}
+
+- (void)enterAsyncCPUView
+{
+    TestAsyncCPUViewController *vc = [[TestAsyncCPUViewController alloc] init];
     [self.navigationController pushViewController:vc animated:YES];
 }
 

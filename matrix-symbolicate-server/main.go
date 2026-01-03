@@ -46,7 +46,15 @@ func main() {
 
 	// 静态文件服务
 	r.Static("/static", "./static")
-	r.StaticFile("/", "./static/index.html")
+	r.GET("/", func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+	r.GET("/web", func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
+	r.GET("/web/", func(c *gin.Context) {
+		c.File("./static/index.html")
+	})
 
 	// API 路由
 	api := r.Group("/api")
@@ -314,16 +322,60 @@ func listReportsHandler(c *gin.Context) {
 			symbolicated = true
 		}
 
+		// 尝试读取dump_type信息
+		dumpType := ""
+		dumpTypeCode := -1
+		reportPath := filepath.Join(ReportsDir, file.Name())
+		if data, err := os.ReadFile(reportPath); err == nil {
+			var reportData map[string]interface{}
+			if err := json.Unmarshal(data, &reportData); err == nil {
+				if dt, ok := reportData["dump_type"].(float64); ok {
+					dumpTypeCode = int(dt)
+					dumpType = getDumpTypeName(dumpTypeCode)
+				}
+			}
+		}
+
 		reports = append(reports, map[string]interface{}{
-			"id":           reportID,
-			"filename":     file.Name(),
-			"size":         info.Size(),
-			"uploaded":     info.ModTime(),
-			"symbolicated": symbolicated,
+			"id":            reportID,
+			"filename":      file.Name(),
+			"size":          info.Size(),
+			"uploaded":      info.ModTime(),
+			"symbolicated":  symbolicated,
+			"dump_type":     dumpType,
+			"dump_type_code": dumpTypeCode,
 		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"reports": reports})
+}
+
+// getDumpTypeName 根据dump_type代码返回类型名称
+func getDumpTypeName(dumpType int) string {
+	switch dumpType {
+	case 2000:
+		return "无卡顿"
+	case 2001:
+		return "主线程卡顿"
+	case 2002:
+		return "后台主线程卡顿"
+	case 2003:
+		return "CPU 占用过高"
+	case 2007:
+		return "启动阻塞"
+	case 2009:
+		return "线程过多"
+	case 2010:
+		return "被杀死前卡顿"
+	case 2011:
+		return "耗电监控"
+	case 2013:
+		return "磁盘 I/O"
+	case 2014:
+		return "FPS 掉帧"
+	default:
+		return fmt.Sprintf("类型 %d", dumpType)
+	}
 }
 
 // getReportHandler 获取报告详情

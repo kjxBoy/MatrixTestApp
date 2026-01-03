@@ -20,6 +20,8 @@
 		11C95CA2221BB0E200640795 /* Utility.mm in Sources */ = {isa = PBXBuildFile; fileRef = 11C95CA1221BB0E200640795 /* Utility.mm */; };
 		11F0D76B21E43B5D0053FAC5 /* MatrixHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 11F0D76A21E43B5D0053FAC5 /* MatrixHandler.mm */; };
 		E0EC90C827BE4FC00050CF6F /* Matrix.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E0EC90C527BE4FA10050CF6F /* Matrix.framework */; };
+		FAC674E62F07BEFC00F317BC /* TestAsyncCPUViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = FAC674E52F07BEFC00F317BC /* TestAsyncCPUViewController.mm */; };
+		FAC674ED2F07C87500F317BC /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FAC674EA2F07C87500F317BC /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +79,9 @@
 		11F0D76921E43B5D0053FAC5 /* MatrixHandler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MatrixHandler.h; sourceTree = "<group>"; };
 		11F0D76A21E43B5D0053FAC5 /* MatrixHandler.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MatrixHandler.mm; sourceTree = "<group>"; };
 		E0EC90BF27BE4FA10050CF6F /* Matrix.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Matrix.xcodeproj; path = "matrix-iOS/Matrix/Matrix.xcodeproj"; sourceTree = "<group>"; };
+		FAC674E42F07BEFC00F317BC /* TestAsyncCPUViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestAsyncCPUViewController.h; sourceTree = "<group>"; };
+		FAC674E52F07BEFC00F317BC /* TestAsyncCPUViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = TestAsyncCPUViewController.mm; sourceTree = "<group>"; };
+		FAC674EA2F07C87500F317BC /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,6 +89,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAC674ED2F07C87500F317BC /* Accelerate.framework in Frameworks */,
 				E0EC90C827BE4FC00050CF6F /* Matrix.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -118,6 +124,8 @@
 				114E671820A995F70045083D /* AppDelegate.m */,
 				114E671A20A995F70045083D /* ViewController.h */,
 				114E673320A996830045083D /* ViewController.mm */,
+				FAC674E42F07BEFC00F317BC /* TestAsyncCPUViewController.h */,
+				FAC674E52F07BEFC00F317BC /* TestAsyncCPUViewController.mm */,
 				11C95C3E221BA16E00640795 /* TestCrashViewController.h */,
 				11C95C3F221BA16E00640795 /* TestCrashViewController.mm */,
 				1144F563221E4F96007A6410 /* TestLagViewController.h */,
@@ -135,6 +143,7 @@
 		114E672D20A9963C0045083D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				FAC674EA2F07C87500F317BC /* Accelerate.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -267,6 +276,7 @@
 				11C95CA2221BB0E200640795 /* Utility.mm in Sources */,
 				11C95C40221BA16E00640795 /* TestCrashViewController.mm in Sources */,
 				114E673620A996830045083D /* SlowTestViewController.mm in Sources */,
+				FAC674E62F07BEFC00F317BC /* TestAsyncCPUViewController.mm in Sources */,
 				11F0D76B21E43B5D0053FAC5 /* MatrixHandler.mm in Sources */,
 				114E673720A996830045083D /* ViewController.mm in Sources */,
 				11B439BA21F1DA2B00A0A8C3 /* TextViewController.m in Sources */,

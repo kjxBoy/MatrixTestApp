@@ -48,5 +48,5 @@ echo ""
 
 # 启动服务
 export PORT=$PORT
-go run main.go symbolicate.go
+go run .
 
