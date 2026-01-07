@@ -29,6 +29,8 @@
 #import <os/lock.h>
 #import <execinfo.h>
 #import "WCMatrixModel.h"
+// 🆕 引入异步堆栈追溯管理器
+#import "WCAsyncStackTraceManager.h"
 
 #if !TARGET_OS_OSX
 #import <UIKit/UIKit.h>
@@ -1294,6 +1296,39 @@ cleanup:
 
             // 获取线程堆栈
             trace_length_matrix[i] = kssc_backtraceCurrentThread(current_thread, backtrace_buffer, (int)maxEntries);
+
+            // ============================================================================
+            // 🆕 异步堆栈合并逻辑
+            // ============================================================================
+            WCAsyncStackTraceManager *asyncManager = [WCAsyncStackTraceManager sharedInstance];
+            if ([asyncManager isEnabled]) {
+                // 查询异步线程的发起堆栈
+                NSArray<NSNumber *> *originStack = [asyncManager getOriginStackForThread:current_thread];
+                
+                if (originStack && originStack.count > 0) {
+                    int currentLength = trace_length_matrix[i];
+                    
+                    // 添加异步分界线标记（特殊地址）
+                    if (currentLength < maxEntries) {
+                        backtrace_buffer[currentLength++] = (uintptr_t)0xDEADBEEF;
+                    }
+                    
+                    // 追加发起堆栈
+                    for (NSNumber *addr in originStack) {
+                        if (currentLength < maxEntries) {
+                            backtrace_buffer[currentLength++] = [addr unsignedLongValue];
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // 更新堆栈长度
+                    trace_length_matrix[i] = currentLength;
+                    
+                    MatrixInfo(@"[AsyncTrace] 线程 %u: 合并了 %lu 帧异步堆栈", 
+                              current_thread, (unsigned long)originStack.count);
+                }
+            }
 
             // 复制堆栈地址到矩阵
             int j = 0;

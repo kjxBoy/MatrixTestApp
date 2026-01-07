@@ -16,6 +16,9 @@
 
 #import "AppDelegate.h"
 #import "ViewController.h"
+#import "MatrixHandler.h"
+// 🆕 引入异步堆栈追溯管理器（通过 Matrix framework）
+#import <Matrix/WCAsyncStackTraceManager.h>
 
 @interface AppDelegate ()
 
@@ -25,6 +28,20 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    // ============================================================================
+    // 🆕 步骤1：启用异步堆栈追溯（必须在 Matrix 初始化之前）
+    // ============================================================================
+    NSLog(@"[App] 启用异步堆栈追溯...");
+    BOOL asyncTraceEnabled = [[WCAsyncStackTraceManager sharedInstance] enableAsyncStackTrace];
+    if (asyncTraceEnabled) {
+        NSLog(@"[App] ✅ 异步堆栈追溯已启用");
+    } else {
+        NSLog(@"[App] ⚠️ 异步堆栈追溯启用失败");
+    }
+    
+    // ============================================================================
+    // 原有的 UI 初始化代码
+    // ============================================================================
     ViewController *vc = [[ViewController alloc] init];
     _navigationController = [[UINavigationController alloc] initWithRootViewController:vc];
 
