@@ -329,7 +329,19 @@ func listReportsHandler(c *gin.Context) {
 		if data, err := os.ReadFile(reportPath); err == nil {
 			var reportData map[string]interface{}
 			if err := json.Unmarshal(data, &reportData); err == nil {
-				if dt, ok := reportData["dump_type"].(float64); ok {
+				// 检查是否是 OOM 报告
+				if head, hasHead := reportData["head"].(map[string]interface{}); hasHead {
+					if _, hasItems := reportData["items"].([]interface{}); hasItems {
+						dumpTypeCode = 3000
+						dumpType = "内存溢出 (OOM)"
+						
+						// 尝试从 head 中获取更多信息
+						if scene, ok := head["foom_scene"].(string); ok && scene != "" {
+							dumpType = fmt.Sprintf("内存溢出 (OOM) - %s", scene)
+						}
+					}
+				} else if dt, ok := reportData["dump_type"].(float64); ok {
+					// 卡顿/崩溃报告
 					dumpTypeCode = int(dt)
 					dumpType = getDumpTypeName(dumpTypeCode)
 				}
@@ -373,6 +385,8 @@ func getDumpTypeName(dumpType int) string {
 		return "磁盘 I/O"
 	case 2014:
 		return "FPS 掉帧"
+	case 3000:
+		return "内存溢出 (OOM)"
 	default:
 		return fmt.Sprintf("类型 %d", dumpType)
 	}

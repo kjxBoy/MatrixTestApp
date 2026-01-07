@@ -291,8 +291,20 @@ func symbolicateReport(report interface{}, dsymPath string) (map[string]interfac
 		binaryImages = []interface{}{}
 	}
 
-	// 判断是卡顿类型还是耗电类型
-	if stackString, ok := reportMap["stack_string"].([]interface{}); ok && len(stackString) > 0 {
+	// 判断报告类型：OOM、卡顿、耗电
+	if head, hasHead := reportMap["head"].(map[string]interface{}); hasHead {
+		if items, hasItems := reportMap["items"].([]interface{}); hasItems {
+			// OOM 内存溢出报告格式：head + items[]
+			log.Printf("📊 检测到 OOM 内存溢出报告，items数组长度=%d", len(items))
+			symbolicatedItems, err := symbolicateOOMReport(items, binaryPath, loadAddr, arch, binaryImages)
+			if err != nil {
+				log.Printf("⚠️  OOM 符号化部分失败: %v", err)
+			}
+			result["items"] = symbolicatedItems
+			result["head"] = head
+			dumpType = 3000 // OOM 类型码
+		}
+	} else if stackString, ok := reportMap["stack_string"].([]interface{}); ok && len(stackString) > 0 {
 		// 耗电监控数据格式：stack_string[]
 		log.Printf("📊 检测到耗电监控数据，dump_type=%d, stack_string数组长度=%d", dumpType, len(stackString))
 		symbolicated = symbolicateCustomStack(stackString, binaryPath, loadAddr, arch, binaryImages)
@@ -627,6 +639,104 @@ func symbolicateThread(thread map[string]interface{}, binaryPath string, loadAdd
 
 	result["backtrace"] = newBacktrace
 	return result
+}
+
+// symbolicateOOMReport 符号化 OOM 内存溢出报告
+// OOM 报告格式：items[].stacks[].frames[]
+// 每个 frame 格式: {uuid: "xxx", offset: 123456}
+func symbolicateOOMReport(items []interface{}, binaryPath string, loadAddr uint64, arch string, binaryImages []interface{}) ([]interface{}, error) {
+	log.Printf("🔍 开始符号化 OOM 报告，items 数量: %d", len(items))
+	
+	symbolicatedItems := make([]interface{}, 0)
+	
+	for itemIdx, item := range items {
+		itemMap, ok := item.(map[string]interface{})
+		if !ok {
+			log.Printf("⚠️  跳过无效的 item[%d]", itemIdx)
+			symbolicatedItems = append(symbolicatedItems, item)
+			continue
+		}
+		
+		// 复制 item 的所有字段
+		newItem := make(map[string]interface{})
+		for k, v := range itemMap {
+			newItem[k] = v
+		}
+		
+		// 处理 stacks 数组
+		stacks, hasStacks := itemMap["stacks"].([]interface{})
+		if !hasStacks || len(stacks) == 0 {
+			symbolicatedItems = append(symbolicatedItems, newItem)
+			continue
+		}
+		
+		log.Printf("  📍 Item[%d] - name: %v, count: %v, size: %v, stacks: %d",
+			itemIdx, itemMap["name"], itemMap["count"], itemMap["size"], len(stacks))
+		
+		symbolicatedStacks := make([]interface{}, 0)
+		
+		for stackIdx, stack := range stacks {
+			stackMap, ok := stack.(map[string]interface{})
+			if !ok {
+				symbolicatedStacks = append(symbolicatedStacks, stack)
+				continue
+			}
+			
+			// 复制 stack 的字段
+			newStack := make(map[string]interface{})
+			for k, v := range stackMap {
+				newStack[k] = v
+			}
+			
+			// 处理 frames 数组
+			frames, hasFrames := stackMap["frames"].([]interface{})
+			if !hasFrames || len(frames) == 0 {
+				symbolicatedStacks = append(symbolicatedStacks, newStack)
+				continue
+			}
+			
+			symbolicatedFrames := make([]interface{}, 0)
+			
+			for frameIdx, frame := range frames {
+				frameMap, ok := frame.(map[string]interface{})
+				if !ok {
+					symbolicatedFrames = append(symbolicatedFrames, frame)
+					continue
+				}
+				
+				// 获取 uuid 和 offset
+				uuid, _ := frameMap["uuid"].(string)
+				offsetFloat, _ := frameMap["offset"].(float64)
+				offset := uint64(offsetFloat)
+				
+				// 符号化地址
+				symbol := symbolicateAddress(binaryPath, loadAddr, offset, arch)
+				
+				// 创建符号化后的 frame
+				symbolicatedFrame := map[string]interface{}{
+					"uuid":   uuid,
+					"offset": offset,
+					"symbol": symbol,
+				}
+				
+				if frameIdx < 3 { // 只打印前3个frame的日志
+					log.Printf("    🔹 Stack[%d] Frame[%d]: offset=0x%x -> %s", 
+						stackIdx, frameIdx, offset, symbol)
+				}
+				
+				symbolicatedFrames = append(symbolicatedFrames, symbolicatedFrame)
+			}
+			
+			newStack["frames"] = symbolicatedFrames
+			symbolicatedStacks = append(symbolicatedStacks, newStack)
+		}
+		
+		newItem["stacks"] = symbolicatedStacks
+		symbolicatedItems = append(symbolicatedItems, newItem)
+	}
+	
+	log.Printf("✅ OOM 报告符号化完成")
+	return symbolicatedItems, nil
 }
 
 // symbolicateCustomStack 符号化耗电监控的 stack_string 数据（树状结构）

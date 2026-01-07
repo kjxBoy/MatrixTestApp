@@ -242,16 +242,24 @@ void kscrash_crashCallback(const KSCrashReportWriter *writer)
 
 - (void)uploadReportToServer:(MatrixIssue *)issue
 {
-    // 只上报卡顿和崩溃日志
-    if (![issue.issueTag isEqualToString:[WCCrashBlockMonitorPlugin getTag]]) {
-        return;
-    }
-    
     NSString *reportType = @"unknown";
-    if (issue.reportType == EMCrashBlockReportType_Lag) {
-        reportType = @"lag";
-    } else if (issue.reportType == EMCrashBlockReportType_Crash) {
-        reportType = @"crash";
+    
+    // 判断问题类型
+    if ([issue.issueTag isEqualToString:[WCCrashBlockMonitorPlugin getTag]]) {
+        // 卡顿和崩溃日志
+        if (issue.reportType == EMCrashBlockReportType_Lag) {
+            reportType = @"lag";
+        } else if (issue.reportType == EMCrashBlockReportType_Crash) {
+            reportType = @"crash";
+        }
+    } else if ([issue.issueTag isEqualToString:[WCMemoryStatPlugin getTag]]) {
+        // 内存溢出日志
+        reportType = @"oom";
+        NSLog(@"📊 检测到内存溢出报告，准备上报");
+    } else {
+        // 未知类型，不上报
+        NSLog(@"⚠️  未知的问题类型: %@", issue.issueTag);
+        return;
     }
     
     // 获取报告数据

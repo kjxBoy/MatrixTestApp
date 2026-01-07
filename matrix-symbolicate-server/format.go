@@ -12,6 +12,13 @@ import (
 func formatReportToAppleStyle(report map[string]interface{}) string {
 	var result strings.Builder
 
+	// 检查是否是 OOM 报告
+	if _, hasHead := report["head"].(map[string]interface{}); hasHead {
+		if _, hasItems := report["items"].([]interface{}); hasItems {
+			return formatOOMReport(report)
+		}
+	}
+
 	// 检查是否是耗电日志
 	dumpType := 0
 	if dt, ok := report["dump_type"].(float64); ok {
@@ -771,4 +778,252 @@ func formatPowerConsumeFrame(result *strings.Builder, frame map[string]interface
 			}
 		}
 	}
+}
+
+// formatOOMReport 格式化 OOM 内存溢出报告
+func formatOOMReport(report map[string]interface{}) string {
+	var result strings.Builder
+
+	result.WriteString("📊 Matrix 内存溢出 (OOM) 报告\n")
+	result.WriteString(strings.Repeat("=", 100) + "\n\n")
+
+	// 解析 head 信息
+	head, _ := report["head"].(map[string]interface{})
+	
+	// 基本信息
+	result.WriteString("📱 设备信息:\n")
+	result.WriteString(strings.Repeat("-", 100) + "\n")
+	if phone, ok := head["phone"].(string); ok {
+		result.WriteString(fmt.Sprintf("  设备型号:     %s\n", phone))
+	}
+	if osVer, ok := head["os_ver"].(string); ok {
+		result.WriteString(fmt.Sprintf("  系统版本:     %s\n", osVer))
+	}
+	if appUUID, ok := head["app_uuid"].(string); ok {
+		result.WriteString(fmt.Sprintf("  应用 UUID:    %s\n", appUUID))
+	}
+	
+	// 时间信息
+	if launchTime, ok := head["launch_time"].(float64); ok {
+		launchTimeStr := time.Unix(int64(launchTime)/1000, 0).Format("2006-01-02 15:04:05")
+		result.WriteString(fmt.Sprintf("  启动时间:     %s\n", launchTimeStr))
+	}
+	if reportTime, ok := head["report_time"].(float64); ok {
+		reportTimeStr := time.Unix(int64(reportTime)/1000, 0).Format("2006-01-02 15:04:05")
+		result.WriteString(fmt.Sprintf("  报告时间:     %s\n", reportTimeStr))
+		
+		// 计算运行时长
+		if launchTime, ok := head["launch_time"].(float64); ok {
+			duration := int64(reportTime)/1000 - int64(launchTime)/1000
+			result.WriteString(fmt.Sprintf("  运行时长:     %d 秒 (%.1f 分钟)\n", duration, float64(duration)/60.0))
+		}
+	}
+	
+	// 场景信息
+	if scene, ok := head["foom_scene"].(string); ok && scene != "" {
+		result.WriteString(fmt.Sprintf("  FOOM 场景:    %s\n", scene))
+	}
+	
+	// 自定义信息
+	hasCustomInfo := false
+	for key, value := range head {
+		if key != "protocol_ver" && key != "phone" && key != "os_ver" && 
+		   key != "launch_time" && key != "report_time" && key != "app_uuid" && key != "foom_scene" {
+			if !hasCustomInfo {
+				result.WriteString("\n  自定义信息:\n")
+				hasCustomInfo = true
+			}
+			result.WriteString(fmt.Sprintf("    %s: %v\n", key, value))
+		}
+	}
+	
+	result.WriteString("\n")
+
+	// 解析 items 信息
+	items, _ := report["items"].([]interface{})
+	
+	result.WriteString(fmt.Sprintf("💾 内存分配统计 (共 %d 个对象类型):\n", len(items)))
+	result.WriteString(strings.Repeat("-", 100) + "\n\n")
+
+	// 按内存大小排序
+	type ItemInfo struct {
+		index int
+		name  string
+		size  int64
+		count int64
+		item  map[string]interface{}
+	}
+	
+	var itemList []ItemInfo
+	totalSize := int64(0)
+	totalCount := int64(0)
+	
+	for i, itemData := range items {
+		itemMap, ok := itemData.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		
+		name := getString(itemMap, "name")
+		size := getInt64(itemMap, "size")
+		count := getInt64(itemMap, "count")
+		
+		totalSize += size
+		totalCount += count
+		
+		itemList = append(itemList, ItemInfo{
+			index: i,
+			name:  name,
+			size:  size,
+			count: count,
+			item:  itemMap,
+		})
+	}
+	
+	// 按大小降序排序
+	sort.Slice(itemList, func(i, j int) bool {
+		return itemList[i].size > itemList[j].size
+	})
+	
+	// 总览
+	result.WriteString(fmt.Sprintf("  总内存占用:   %s (%.2f MB)\n", formatBytes(totalSize), float64(totalSize)/1024/1024))
+	result.WriteString(fmt.Sprintf("  总对象数量:   %d\n\n", totalCount))
+	
+	// 显示 TOP 对象
+	topN := 20
+	if len(itemList) < topN {
+		topN = len(itemList)
+	}
+	
+	result.WriteString(fmt.Sprintf("🔝 TOP %d 内存占用对象:\n", topN))
+	result.WriteString(strings.Repeat("-", 100) + "\n")
+	result.WriteString(fmt.Sprintf("%-4s %-40s %15s %10s %8s\n", "序号", "对象类型", "内存占用", "对象数量", "占比"))
+	result.WriteString(strings.Repeat("-", 100) + "\n")
+	
+	for i := 0; i < topN; i++ {
+		item := itemList[i]
+		percentage := float64(item.size) / float64(totalSize) * 100
+		result.WriteString(fmt.Sprintf("%-4d %-40s %15s %10d %7.2f%%\n", 
+			i+1, 
+			truncateString(item.name, 40),
+			formatBytes(item.size),
+			item.count,
+			percentage))
+	}
+	
+	result.WriteString("\n")
+	
+	// 详细堆栈信息
+	result.WriteString("📚 详细堆栈信息:\n")
+	result.WriteString(strings.Repeat("=", 100) + "\n\n")
+	
+	// 只显示前 5 个最大的对象的详细堆栈
+	detailN := 5
+	if len(itemList) < detailN {
+		detailN = len(itemList)
+	}
+	
+	for i := 0; i < detailN; i++ {
+		item := itemList[i]
+		result.WriteString(fmt.Sprintf("【%d】 %s\n", i+1, item.name))
+		result.WriteString(fmt.Sprintf("     内存: %s (%.2f MB) | 对象数: %d\n", 
+			formatBytes(item.size), 
+			float64(item.size)/1024/1024,
+			item.count))
+		result.WriteString(strings.Repeat("-", 100) + "\n")
+		
+		// 获取 stacks
+		stacks, hasStacks := item.item["stacks"].([]interface{})
+		if !hasStacks || len(stacks) == 0 {
+			result.WriteString("  ⚠️  无堆栈信息\n\n")
+			continue
+		}
+		
+		// 显示前几个堆栈
+		stackLimit := 3
+		if len(stacks) < stackLimit {
+			stackLimit = len(stacks)
+		}
+		
+		for si := 0; si < stackLimit; si++ {
+			stackMap, ok := stacks[si].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			
+			stackSize := getInt64(stackMap, "size")
+			stackCount := getInt64(stackMap, "count")
+			
+			result.WriteString(fmt.Sprintf("\n  堆栈 #%d: 大小=%s, 数量=%d\n", 
+				si+1, formatBytes(stackSize), stackCount))
+			result.WriteString("  " + strings.Repeat("-", 98) + "\n")
+			
+			// 获取 frames
+			frames, hasFrames := stackMap["frames"].([]interface{})
+			if !hasFrames || len(frames) == 0 {
+				result.WriteString("    ⚠️  无帧信息\n")
+				continue
+			}
+			
+			// 显示所有帧
+			for fi, frameData := range frames {
+				frameMap, ok := frameData.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				
+				offset := getInt64(frameMap, "offset")
+				symbol := getString(frameMap, "symbol")
+				
+				if symbol != "" && symbol != "???" {
+					// 已符号化
+					result.WriteString(fmt.Sprintf("    %-3d  %s\n", fi, symbol))
+				} else {
+					// 未符号化，显示地址
+					result.WriteString(fmt.Sprintf("    %-3d  0x%x\n", fi, offset))
+				}
+			}
+		}
+		
+		if len(stacks) > stackLimit {
+			result.WriteString(fmt.Sprintf("\n  ... 还有 %d 个堆栈未显示\n", len(stacks)-stackLimit))
+		}
+		
+		result.WriteString("\n")
+	}
+	
+	if len(itemList) > detailN {
+		result.WriteString(fmt.Sprintf("... 还有 %d 个对象类型未显示详细信息\n\n", len(itemList)-detailN))
+	}
+	
+	result.WriteString(strings.Repeat("=", 100) + "\n")
+	result.WriteString("说明:\n")
+	result.WriteString("  - 内存占用按从大到小排序\n")
+	result.WriteString("  - 堆栈信息显示了导致内存分配的调用链\n")
+	result.WriteString("  - 符号化后的堆栈可以直接定位到源代码位置\n")
+	result.WriteString("  - 重点关注占用内存最多的对象类型\n")
+
+	return result.String()
+}
+
+// formatBytes 格式化字节数为可读格式
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.2f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// truncateString 截断字符串到指定长度
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen-3] + "..."
 }
