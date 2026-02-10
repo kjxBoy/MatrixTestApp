@@ -156,7 +156,8 @@ int kssc_backtraceCurrentThread(KSThread currentThread, uintptr_t *backtraceBuff
     // ========================================================================
     /*
      * KSStackCursor 是一个迭代器模式的实现
-     * 
+     *
+     * 迭代器模式
      * 结构：
      * - context: 存储遍历所需的上下文数据
      * - advanceCursor: 函数指针，移动到下一个栈帧
